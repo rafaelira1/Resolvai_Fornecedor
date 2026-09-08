@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import BrandMark from '../components/BrandMark'
+import { BrandWordmark } from '../components/BrandLogo'
 import { privacySections, termsSections } from '../data/legalContent'
 
 const documents = {
@@ -57,8 +58,7 @@ function LegalPage({ document: documentType }) {
     <div className="legal-page" id="topo">
       <header className="legal-topbar">
         <a className="legal-brand" href="/login" aria-label="ResolvAI — voltar ao login">
-          <BrandMark />
-          <span className="legal-brand-name">Resolv<span>AI</span></span>
+          <BrandWordmark className="legal-brand-logo" />
           <span className="legal-brand-divider" aria-hidden="true" />
           <span className="legal-brand-area">Área do fornecedor</span>
         </a>
@@ -141,8 +141,8 @@ function LegalPage({ document: documentType }) {
       </div>
 
       <footer className="legal-footer">
-        <div className="legal-footer-brand"><span className="footer-mark">R</span><span>ResolvAI</span></div>
-        <p>© 2026 ResolvAI. Conectando quem resolve ao trabalho certo.</p>
+        <div className="legal-footer-brand"><BrandMark /><span>ResolvAI</span></div>
+        <p>© 2026 ResolvAI. Conectando quem precisa a quem resolve.</p>
         <nav aria-label="Documentos legais">
           <a href="/termos-de-uso">Termos de Uso</a>
           <a href="/politica-de-privacidade">Privacidade</a>

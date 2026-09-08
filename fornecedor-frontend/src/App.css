@@ -36,33 +36,28 @@ button, a, input[type='checkbox'] { -webkit-tap-highlight-color: transparent; }
 .brand-mark {
   width: 86px;
   height: 86px;
+  overflow: hidden;
   display: grid;
   place-items: center;
   border-radius: 24px;
-  color: #fff;
-  background: linear-gradient(145deg, #ff672e, var(--orange));
-  box-shadow: 0 16px 34px rgba(255, 79, 31, 0.3);
-  font-size: 40px;
-  font-weight: 800;
-  line-height: 1;
+  background: var(--navy-900);
+  box-shadow: 0 14px 32px rgba(3, 12, 24, 0.24);
 }
 
-.brand-name {
-  margin-top: 24px;
-  color: #fff;
-  font-size: clamp(34px, 3vw, 48px);
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -1.8px;
+.brand-mark img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  transform: scale(1.54);
 }
 
-.brand-name span { color: var(--orange); }
+.brand-wordmark,
+.brand-lockup { display: block; max-width: 100%; height: auto; }
 
-.brand-tagline {
-  margin: 24px 0 30px;
-  color: #aeb9c8;
-  font-size: clamp(17px, 1.4vw, 21px);
-  line-height: 1.55;
+.provider-wordmark {
+  width: min(100%, 350px);
+  margin-bottom: 28px;
 }
 
 .provider-badge {
@@ -304,8 +299,7 @@ footer {
   }
 
   .mobile-brand { display: flex; flex-direction: column; align-items: center; }
-  .mobile-brand .brand-mark { width: 64px; height: 64px; border-radius: 19px; font-size: 30px; }
-  .mobile-brand .brand-name { margin-top: 15px; font-size: 28px; letter-spacing: -1px; }
+  .mobile-brand .provider-wordmark { width: 230px; margin-bottom: 0; }
   .mobile-brand .provider-badge { margin-top: 15px; padding: 7px 12px; font-size: 11px; }
 
   .login-card {
@@ -332,8 +326,7 @@ footer {
 
 @media (max-width: 840px) and (max-height: 900px) {
   .form-panel { padding-top: 24px; padding-bottom: 20px; }
-  .mobile-brand .brand-mark { width: 56px; height: 56px; border-radius: 17px; font-size: 27px; }
-  .mobile-brand .brand-name { margin-top: 10px; font-size: 26px; }
+  .mobile-brand .provider-wordmark { width: 205px; }
   .mobile-brand .provider-badge { margin-top: 12px; }
   .login-card { margin-top: 24px; padding-top: 24px; padding-bottom: 20px; }
   .form-heading { margin-bottom: 22px; }
@@ -378,21 +371,7 @@ html { scroll-behavior: smooth; scroll-padding-top: 92px; }
   text-decoration: none;
 }
 
-.legal-brand .brand-mark {
-  width: 38px;
-  height: 38px;
-  border-radius: 11px;
-  box-shadow: 0 8px 20px rgba(255, 79, 31, 0.25);
-  font-size: 18px;
-}
-
-.legal-brand-name {
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: -0.6px;
-}
-
-.legal-brand-name span { color: var(--orange); }
+.legal-brand-logo { width: 152px; }
 
 .legal-brand-divider {
   width: 1px;
@@ -718,7 +697,7 @@ html { scroll-behavior: smooth; scroll-padding-top: 92px; }
 }
 
 .legal-footer-brand { display: flex; align-items: center; gap: 9px; color: white; font-size: 14px; font-weight: 800; }
-.footer-mark { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px; background: var(--orange); color: white; }
+.legal-footer-brand .brand-mark { width: 30px; height: 30px; border-radius: 8px; box-shadow: none; }
 .legal-footer p { margin: 0; }
 .legal-footer nav { display: flex; gap: 20px; }
 .legal-footer a { color: #9aabba; text-decoration: none; }

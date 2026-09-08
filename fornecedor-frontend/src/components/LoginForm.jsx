@@ -95,7 +95,7 @@ function LoginForm() {
 
       <div className="signup-callout">
         <span>Ainda não possui uma conta?</span>
-        <a href="#criar-conta">Criar conta</a>
+        <a href="/criar-conta">Criar conta</a>
       </div>
 
       <footer>
