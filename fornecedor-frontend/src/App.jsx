@@ -2,12 +2,15 @@ import './App.css'
 import LoginPage from './pages/LoginPage'
 import LegalPage from './pages/LegalPage'
 import RegisterPage from './pages/RegisterPage'
+import ProviderProfilePage from './pages/ProviderProfilePage'
 
 const screens = {
   '/': LoginPage,
   '/login': LoginPage,
   '/cadastro': RegisterPage,
   '/criar-conta': RegisterPage,
+  '/perfil': ProviderProfilePage,
+  '/meu-perfil': ProviderProfilePage,
   '/termos': () => <LegalPage document="terms" />,
   '/termos-de-uso': () => <LegalPage document="terms" />,
   '/privacidade': () => <LegalPage document="privacy" />,
