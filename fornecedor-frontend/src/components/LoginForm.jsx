@@ -99,8 +99,8 @@ function LoginForm() {
       </div>
 
       <footer>
-        Ao continuar, você concorda com os <a href="#termos">Termos de Uso</a> e a{' '}
-        <a href="#privacidade">Política de Privacidade</a>.
+        Ao continuar, você concorda com os <a href="/termos-de-uso">Termos de Uso</a> e a{' '}
+        <a href="/politica-de-privacidade">Política de Privacidade</a>.
       </footer>
     </div>
   )
