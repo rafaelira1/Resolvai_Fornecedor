@@ -3,17 +3,9 @@ import { EyeIcon } from './Icons'
 
 function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
 
   function handleSubmit(event) {
     event.preventDefault()
-
-    if (event.currentTarget.checkValidity()) {
-      setSubmitted(true)
-      return
-    }
-
-    event.currentTarget.reportValidity()
   }
 
   return (
@@ -86,21 +78,16 @@ function LoginForm() {
           </svg>
         </button>
 
-        {submitted && (
-          <p className="integration-note" role="status">
-            Formulário pronto para ser conectado ao backend.
-          </p>
-        )}
       </form>
 
       <div className="signup-callout">
         <span>Ainda não possui uma conta?</span>
-        <a href="#criar-conta">Criar conta</a>
+        <a href="/criar-conta">Criar conta</a>
       </div>
 
       <footer>
-        Ao continuar, você concorda com os <a href="#termos">Termos de Uso</a> e a{' '}
-        <a href="#privacidade">Política de Privacidade</a>.
+        Ao continuar, você concorda com os <a href="/termos-de-uso">Termos de Uso</a> e a{' '}
+        <a href="/politica-de-privacidade">Política de Privacidade</a>.
       </footer>
     </div>
   )
