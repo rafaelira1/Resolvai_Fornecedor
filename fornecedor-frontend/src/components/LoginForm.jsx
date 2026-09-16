@@ -6,6 +6,7 @@ function LoginForm() {
 
   function handleSubmit(event) {
     event.preventDefault()
+    window.location.assign('/home')
   }
 
   return (
