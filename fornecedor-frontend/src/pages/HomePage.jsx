@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import ProviderSidebar from '../components/ProviderSidebar'
 import './HomePage.css'
 
 const summaryCards = [
@@ -125,29 +126,7 @@ function HomePage() {
 
   return (
     <div className="provider-home">
-      <aside className="home-sidebar">
-        <a className="home-brand" href="/home" aria-label="ResolvAI, página inicial">
-          <span className="home-brand-mark" aria-hidden="true">R</span>
-          <span className="home-brand-copy">
-            <strong>ResolvAI</strong>
-            <small>Fornecedor</small>
-          </span>
-        </a>
-
-        <nav className="home-navigation" aria-label="Menu principal">
-          <span>Menu</span>
-          <a href="/home" aria-current="page">Home</a>
-        </nav>
-
-        <div className="home-account">
-          <span className="home-account-initials" aria-hidden="true">CS</span>
-          <span className="home-account-copy">
-            <strong>Carlos Silva</strong>
-            <small>Fornecedor verificado</small>
-          </span>
-          <a href="/login">Sair</a>
-        </div>
-      </aside>
+      <ProviderSidebar isHome />
 
       <main className="home-content">
         <header className="home-welcome">
