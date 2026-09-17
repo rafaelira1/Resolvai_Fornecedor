@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { BrandLockup, BrandWordmark } from '../components/BrandLogo'
+import ProviderSidebar from '../components/ProviderSidebar'
 import { getServiceCategories } from '../services/serviceCategories'
 import './ProviderProfilePage.css'
 
@@ -24,11 +24,6 @@ const portfolioItems = [
 
 function Icon({ name }) {
   const paths = {
-    home: <><path d="m3 11 9-8 9 8" /><path d="M5 10v10h14V10M9 20v-6h6v6" /></>,
-    search: <><circle cx="11" cy="11" r="7" /><path d="m16 16 5 5" /></>,
-    document: <><path d="M6 3h9l4 4v14H6z" /><path d="M15 3v5h5M9 13h6M9 17h6" /></>,
-    chat: <path d="M4 5h16v12H9l-5 4V5Z" />,
-    user: <><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>,
     edit: <><path d="m4 20 4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z" /><path d="m14 7 3 3" /></>,
     check: <path d="m5 12 4 4L19 6" />,
     close: <path d="m6 6 12 12M18 6 6 18" />,
@@ -116,25 +111,9 @@ function ProviderProfilePage() {
 
   return (
     <main className="provider-profile-page">
-      <aside className="profile-sidebar">
-        <a className="profile-sidebar-logo" href="/perfil"><BrandWordmark /></a>
-        <p className="profile-nav-label">Menu</p>
-        <nav className="profile-nav" aria-label="Navegação principal">
-          <a href="#inicio"><Icon name="home" />Visão geral</a>
-          <a href="#pedidos"><Icon name="search" />Pedidos</a>
-          <a href="#propostas"><Icon name="document" />Propostas</a>
-          <a href="#mensagens"><Icon name="chat" />Mensagens<span className="nav-count">2</span></a>
-          <a className="active" href="/perfil" aria-current="page"><Icon name="user" />Meu perfil</a>
-        </nav>
-        <div className="profile-sidebar-user">
-          <span className="sidebar-avatar">C</span>
-          <div><strong>{profile.displayName}</strong><small>Prestador verificado</small></div>
-        </div>
-      </aside>
+      <ProviderSidebar displayName={profile.displayName} />
 
       <section className="profile-main">
-        <header className="profile-mobile-header"><BrandLockup /><span className="mobile-avatar">C</span></header>
-
         <div className="profile-page-heading">
           <div><p>Conta do fornecedor</p><h1>Meu perfil profissional</h1><span>Mantenha suas informações atualizadas para receber oportunidades mais compatíveis.</span></div>
           {!isEditing && <button className="profile-edit-button" type="button" onClick={startEditing}><Icon name="edit" />Editar perfil</button>}
@@ -201,13 +180,6 @@ function ProviderProfilePage() {
         </div>
       </section>
 
-      <nav className="profile-mobile-nav" aria-label="Navegação mobile">
-        <a href="#inicio"><Icon name="home" /><span>Início</span></a>
-        <a href="#pedidos"><Icon name="search" /><span>Pedidos</span></a>
-        <a href="#propostas"><Icon name="document" /><span>Propostas</span></a>
-        <a href="#mensagens"><Icon name="chat" /><span>Chat</span></a>
-        <a className="active" href="/perfil"><Icon name="user" /><span>Perfil</span></a>
-      </nav>
     </main>
   )
 }
