@@ -147,7 +147,7 @@ function HomePage() {
               <p>Novos pedidos</p>
               <h2 id="opportunities-title">Oportunidades recentes</h2>
             </div>
-            <a href="#todas-as-oportunidades">Ver todas</a>
+            <a href="/oportunidades">Ver todas</a>
           </header>
 
           <div className="home-table-scroll">
@@ -172,7 +172,7 @@ function HomePage() {
                   <strong className="home-value" role="cell">{opportunity.estimate}</strong>
                   <Compatibility value={opportunity.compatibility} />
                   <div role="cell">
-                    <button className="home-action-button" type="button">Ver</button>
+                    <a className="home-action-button" href={`/oportunidades/detalhes?id=${opportunity.id}`}>Ver</a>
                   </div>
                 </div>
               ))}
