@@ -1,7 +1,9 @@
 import './ProviderSidebar.css'
 
-function ProviderSidebar({ displayName = 'Carlos Silva', isHome = false }) {
-  const AccountContainer = isHome ? 'a' : 'div'
+function ProviderSidebar({ displayName = 'Carlos Silva', activePage = 'profile', isHome = false }) {
+  const currentPage = isHome ? 'home' : activePage
+  const isProfile = currentPage === 'profile'
+  const AccountContainer = isProfile ? 'div' : 'a'
   const initials = displayName.trim().split(/\s+/).slice(0, 2)
     .map((part) => part[0]).join('').toUpperCase() || 'F'
 
@@ -17,14 +19,15 @@ function ProviderSidebar({ displayName = 'Carlos Silva', isHome = false }) {
 
       <nav className="provider-sidebar-navigation" aria-label="Menu principal">
         <span>Menu</span>
-        <a href="/home" aria-current={isHome ? 'page' : undefined}>Home</a>
+        <a href="/home" aria-current={currentPage === 'home' ? 'page' : undefined}>Home</a>
+        <a href="/oportunidades" aria-current={currentPage === 'opportunities' ? 'page' : undefined}>Oportunidades</a>
       </nav>
 
       <div className="provider-sidebar-account">
         <AccountContainer
           className="provider-sidebar-account-link"
-          href={isHome ? '/meu-perfil' : undefined}
-          aria-label={isHome ? `${displayName}, abrir meu perfil` : undefined}
+          href={!isProfile ? '/meu-perfil' : undefined}
+          aria-label={!isProfile ? `${displayName}, abrir meu perfil` : undefined}
         >
           <span className="provider-sidebar-initials" aria-hidden="true">{initials}</span>
           <span className="provider-sidebar-account-copy">

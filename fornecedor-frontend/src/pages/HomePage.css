@@ -215,8 +215,11 @@
   border-radius: 8px;
   font-size: 11px;
   font-weight: 800;
+  text-decoration: none;
   cursor: pointer;
 }
+
+.home-action-button { display: inline-flex; align-items: center; justify-content: center; }
 
 .home-action-button {
   border: 0;
