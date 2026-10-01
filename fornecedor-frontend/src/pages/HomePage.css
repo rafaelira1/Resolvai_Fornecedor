@@ -219,7 +219,8 @@
   cursor: pointer;
 }
 
-.home-action-button { display: inline-flex; align-items: center; justify-content: center; }
+.home-action-button,
+.home-secondary-button { display: inline-flex; align-items: center; justify-content: center; }
 
 .home-action-button {
   border: 0;
