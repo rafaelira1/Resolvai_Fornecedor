@@ -1,12 +1,28 @@
 import { useState } from 'react'
 import { EyeIcon } from './Icons'
+import { authSession } from '../services/session'
+import { getProviderProfile } from '../services/fornecedores'
 
 function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
-    window.location.assign('/home')
+    if (loading) return
+    const data = new FormData(event.currentTarget)
+    setLoading(true)
+    setError('')
+    try {
+      await authSession.login({ email: data.get('email'), password: data.get('password'), remember: data.has('remember') })
+      await getProviderProfile()
+      window.location.assign('/home')
+    } catch (failure) {
+      authSession.logout()
+      setError(failure.message || 'Não foi possível acessar sua conta. Tente novamente.')
+      setLoading(false)
+    }
   }
 
   return (
@@ -17,7 +33,8 @@ function LoginForm() {
         <p>Entre com seus dados para gerenciar seus serviços.</p>
       </header>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} aria-busy={loading}>
+        {error && <p className="auth-error" role="alert">{error}</p>}
         <div className="field-group">
           <label htmlFor="email">E-mail</label>
           <div className="input-wrapper">
@@ -72,8 +89,8 @@ function LoginForm() {
           <span>Lembrar meu acesso</span>
         </label>
 
-        <button className="submit-button" type="submit">
-          Entrar
+        <button className="submit-button" type="submit" disabled={loading}>
+          {loading ? 'Entrando…' : 'Entrar'}
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M5 12h14M14 7l5 5-5 5" />
           </svg>

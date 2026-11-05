@@ -1,6 +1,10 @@
 import './ProviderSidebar.css'
+import { useProviderSession } from '../hooks/useProviderSession'
+import { authSession } from '../services/session'
 
-function ProviderSidebar({ displayName = 'Carlos Silva', activePage = 'profile', isHome = false }) {
+function ProviderSidebar({ activePage = 'profile', isHome = false }) {
+  const session = useProviderSession()
+  const displayName = session?.profile?.nomeExibicao || session?.user.name || 'Minha conta'
   const currentPage = isHome ? 'home' : activePage
   const isProfile = currentPage === 'profile'
   const AccountContainer = isProfile ? 'div' : 'a'
@@ -33,10 +37,10 @@ function ProviderSidebar({ displayName = 'Carlos Silva', activePage = 'profile',
           <span className="provider-sidebar-initials" aria-hidden="true">{initials}</span>
           <span className="provider-sidebar-account-copy">
             <strong>{displayName}</strong>
-            <small>Fornecedor verificado</small>
+            <small>Conta profissional</small>
           </span>
         </AccountContainer>
-        <a className="provider-sidebar-signout" href="/login">Sair</a>
+        <a className="provider-sidebar-signout" href="/login" onClick={() => authSession.logout()}>Sair</a>
       </div>
     </aside>
   )

@@ -14,6 +14,7 @@ function abortError() {
 }
 
 function getApiEndpoint(path, apiUrl) {
+  if (apiUrl === undefined || (typeof apiUrl === 'string' && !apiUrl.trim())) return path
   let base
   try {
     base = new URL(typeof apiUrl === 'string' ? apiUrl.trim() : '')
@@ -30,7 +31,14 @@ function getApiEndpoint(path, apiUrl) {
 
 function httpError(status, write) {
   if (!write) {
-    return new ApiError('Não foi possível consultar o serviço. Tente novamente.', { status })
+    const messages = {
+      400: 'Confira os dados informados antes de tentar novamente.',
+      401: 'Acesso inválido ou sessão expirada. Entre novamente com sua conta profissional.',
+      403: 'O acesso exige uma conta profissional ativa.',
+      404: 'Perfil profissional não encontrado.',
+      429: 'Muitas solicitações. Aguarde antes de tentar novamente.',
+    }
+    return new ApiError(messages[status] ?? 'Não foi possível concluir a solicitação. Tente novamente.', { status })
   }
 
   if (status === 400) {
@@ -54,11 +62,13 @@ export async function requestJson(path, {
   body,
   expectedStatus = 200,
   signal,
-  apiUrl = import.meta.env?.VITE_API_URL,
+  apiUrl = import.meta.env?.VITE_API_BASE_URL ?? import.meta.env?.VITE_API_URL ?? '',
   fetchImpl = globalThis.fetch,
+  accessToken,
+  registration = false,
   timeoutMs = method === 'POST' ? 90000 : 15000,
 } = {}) {
-  const write = method === 'POST'
+  const write = registration
   const endpoint = getApiEndpoint(path, apiUrl)
   if (signal?.aborted) {
     if (!write) throw abortError()
@@ -84,6 +94,7 @@ export async function requestJson(path, {
       headers: {
         Accept: 'application/json',
         ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       },
       ...(body === undefined ? {} : { body: serializedBody }),
       credentials: 'omit',

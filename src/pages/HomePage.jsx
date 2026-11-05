@@ -3,6 +3,7 @@ import ProviderSidebar from '../components/ProviderSidebar'
 import { formatOrderCurrency, orderStatuses } from '../data/orders'
 import { loadOrders } from '../services/orders'
 import './HomePage.css'
+import { useProviderSession } from '../hooks/useProviderSession'
 
 const summaryCards = [
   {
@@ -92,6 +93,8 @@ function Compatibility({ value }) {
 }
 
 function HomePage() {
+  const session = useProviderSession()
+  const displayName = session?.profile?.nomeExibicao || session?.user.name || ''
   const [orders, setOrders] = useState(loadOrders)
   const activeOrders = orders.filter((order) => order.status !== 'completed')
 
@@ -113,7 +116,7 @@ function HomePage() {
       <main className="home-content">
         <header className="home-welcome">
           <p>Visão geral</p>
-          <h1>Bom dia, Carlos!</h1>
+          <h1>Olá, {displayName}!</h1>
           <span>Você tem 8 novos pedidos compatíveis com o seu perfil.</span>
         </header>
 

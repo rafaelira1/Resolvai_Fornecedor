@@ -159,3 +159,9 @@
 .profile-catalog-error p { margin: 0; line-height: 1.5; }
 .profile-catalog-error button { margin-top: 9px; padding: 7px 10px; border: 1px solid #e3a695; border-radius: 7px; color: #9b2b19; background: white; font: inherit; font-weight: 700; cursor: pointer; }
 .profile-save-button:disabled { opacity: .55; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.profile-layout--account { grid-template-columns: minmax(0, 1fr); }
+.profile-editable-fields { min-width: 0; margin: 0; padding: 0; display: grid; gap: 20px; border: 0; }
+.profile-field select { min-height: 49px; width: 100%; padding: 0 14px; border: 1px solid #cbd5df; border-radius: 10px; color: #1e2a3c; background: white; font: inherit; }
+.profile-editable-fields:disabled { opacity: .7; }
+@media (max-width: 520px) { .profile-edit-button { min-width: auto; padding: 0 12px; font-size: 12px; } }

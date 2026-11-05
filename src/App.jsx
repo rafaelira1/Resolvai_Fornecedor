@@ -11,6 +11,9 @@ import ProposalPage from './pages/ProposalPage'
 import PasswordRecoveryPage from './pages/PasswordRecoveryPage'
 import OrdersPage from './pages/OrdersPage'
 import ServiceOrderPage from './pages/ServiceOrderPage'
+import ProviderGuard from './components/ProviderGuard'
+
+const publicPaths = new Set(['/', '/login', '/recuperar-senha', '/cadastro', '/criar-conta', '/termos', '/termos-de-uso', '/privacidade', '/politica-de-privacidade'])
 
 const screens = {
   '/': LoginPage,
@@ -53,7 +56,7 @@ function App() {
   const currentPath = useSyncExternalStore(subscribeToLocation, getCurrentPath)
   const Screen = screens[currentPath] ?? LoginPage
 
-  return <Screen />
+  return publicPaths.has(currentPath) || !screens[currentPath] ? <Screen /> : <ProviderGuard><Screen /></ProviderGuard>
 }
 
 export default App

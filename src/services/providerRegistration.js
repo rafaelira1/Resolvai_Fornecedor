@@ -5,7 +5,7 @@ const registrationFields = [
   'cidadeAtuacao', 'ufAtuacao', 'raioAtendimentoKm', 'bio', 'registroProfissional', 'especialidades',
 ]
 
-function hasValidProfile(profile) {
+export function hasValidProfile(profile) {
   if (!profile || typeof profile !== 'object' || Array.isArray(profile)) return false
   if (typeof profile.idUsuario !== 'string'
     || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(profile.idUsuario)
@@ -35,6 +35,7 @@ export async function registerProvider(payload, { signal, apiUrl, fetchImpl } = 
     apiUrl,
     fetchImpl,
     method: 'POST',
+    registration: true,
     expectedStatus: 201,
     body,
     timeoutMs: 90000,

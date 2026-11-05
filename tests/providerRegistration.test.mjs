@@ -185,7 +185,7 @@ test('network and cancellation failures do not expose transport errors or repeat
 })
 
 test('invalid API configuration is rejected before any request', async () => {
-  for (const invalidUrl of ['', 'not-a-url', 'ftp://api.example.invalid', 'https://user:unused@api.example.invalid', 'https://api.example.invalid?query=1']) {
+  for (const invalidUrl of ['not-a-url', 'ftp://api.example.invalid', 'https://user:unused@api.example.invalid', 'https://api.example.invalid?query=1']) {
     let attempts = 0
     await assert.rejects(registerProvider(payload(), {
       apiUrl: invalidUrl,
