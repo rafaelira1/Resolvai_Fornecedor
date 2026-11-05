@@ -1,28 +1,26 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { EyeIcon } from './Icons'
 import { authSession } from '../services/session'
 import { getProviderProfile } from '../services/fornecedores'
+import { createLoginFlow } from '../services/loginFlow'
 
 function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [flow] = useState(() => createLoginFlow({
+    auth: authSession,
+    loadProfile: getProviderProfile,
+    onState: (state) => { setLoading(state.loading); setError(state.error) },
+    onSuccess: () => window.location.assign('/home'),
+  }))
+  useEffect(() => () => flow.cancel(), [flow])
 
-  async function handleSubmit(event) {
+  function handleSubmit(event) {
     event.preventDefault()
     if (loading) return
     const data = new FormData(event.currentTarget)
-    setLoading(true)
-    setError('')
-    try {
-      await authSession.login({ email: data.get('email'), password: data.get('password'), remember: data.has('remember') })
-      await getProviderProfile()
-      window.location.assign('/home')
-    } catch (failure) {
-      authSession.logout()
-      setError(failure.message || 'Não foi possível acessar sua conta. Tente novamente.')
-      setLoading(false)
-    }
+    void flow.submit({ email: data.get('email'), password: data.get('password'), remember: data.has('remember') })
   }
 
   return (

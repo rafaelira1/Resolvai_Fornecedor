@@ -61,17 +61,26 @@ export function createAuthClient({ apiUrl, fetchImpl, localStorage, sessionStora
     emit()
     return value
   }
-  async function login({ email, password, remember: keep = false }) {
+  async function login({ email, password, remember: keep = false, signal }) {
     logout()
     const version = generation
-    const result = await requestJson('/api/v1/auth/login-provider', {
-      apiUrl, fetchImpl, method: 'POST', body: { email: email.trim(), password },
-    })
-    const valid = sanitizeSession(result, now)
-    if (!valid || Date.parse(valid.expiresAtUtc) <= now()) throw new ApiError('O acesso exige uma conta profissional ativa e uma sessão válida.', { status: 403 })
-    if (generation !== version) throw sessionError()
-    remember = keep === true
-    return persist(valid)
+    // This signal owns the login and its subsequent profile verification, even
+    // after the login response. Cancellation must never clear a newer login.
+    const cancel = () => { if (generation === version) logout() }
+    signal?.addEventListener('abort', cancel, { once: true })
+    try {
+      const result = await requestJson('/api/v1/auth/login-provider', {
+        apiUrl, fetchImpl, signal, method: 'POST', body: { email: email.trim(), password },
+      })
+      if (signal?.aborted || generation !== version) throw sessionError()
+      const valid = sanitizeSession(result, now)
+      if (!valid || Date.parse(valid.expiresAtUtc) <= now()) throw new ApiError('O acesso exige uma conta profissional ativa e uma sessão válida.', { status: 403 })
+      remember = keep === true
+      return persist(valid)
+    } catch (error) {
+      signal?.removeEventListener('abort', cancel)
+      throw error
+    }
   }
   function refresh() {
     if (refreshFlight) return refreshFlight

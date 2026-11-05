@@ -3,6 +3,19 @@ import { hasValidProfile } from './providerRegistration.js'
 import { validateRegistration, PROFESSIONAL_FIELDS } from './registrationValidation.js'
 import { authSession } from './session.js'
 
+export function getProfileSpecialtyOptions(categories, selected) {
+  const available = new Set(categories.map((category) => category.id))
+  return [
+    ...categories,
+    ...selected.filter((id) => !available.has(id)).map((id) => ({ id, name: id, unavailable: true })),
+  ]
+}
+
+export function toggleProfileSpecialty(selected, id, categories) {
+  if (selected.includes(id)) return selected.filter((code) => code !== id)
+  return categories.some((category) => category.id === id) ? [...selected, id] : selected
+}
+
 function confirmProfile(profile, auth) {
   if (!hasValidProfile(profile)
     || ['name', 'email', 'telefone'].some((field) => typeof profile[field] !== 'string' || !profile[field].trim())

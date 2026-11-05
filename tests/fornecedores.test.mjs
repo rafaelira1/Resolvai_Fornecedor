@@ -76,3 +76,35 @@ test('PATCH requires the complete radius instead of applying registration defaul
   for (const raioAtendimentoKm of ['', ' ', undefined, null]) await assert.rejects(updateProviderProfile(profile({ raioAtendimentoKm }), { auth }))
   assert.equal(writes, 0)
 })
+
+test('an existing inactive specialty can be removed or replaced before an active-only PATCH', async () => {
+  const { getProfileSpecialtyOptions, toggleProfileSpecialty } = await import('../src/services/fornecedores.js')
+  const categories = [{ id: 'eletrica', name: 'Elétrica' }]
+  for (const linked of [['inactive'], ['inactive', 'eletrica']]) {
+    let writes = 0
+    const { auth } = setup(async (_url, options) => {
+      if (options.method !== 'PATCH') return response(200, profile({ especialidades: linked }))
+      writes++
+      const body = JSON.parse(options.body)
+      assert.deepEqual(body.especialidades, ['eletrica'])
+      return response(200, profile({ ...body }))
+    })
+    await auth.login({ email: 'provider@example.invalid', password: 'test' })
+    const draft = { ...await getProviderProfile({ auth }) }
+    await assert.rejects(updateProviderProfile(draft, { auth, availableSpecialties: ['eletrica'] }))
+    assert.equal(writes, 0)
+    const unavailable = getProfileSpecialtyOptions(categories, draft.especialidades).find((option) => option.id === 'inactive')
+    assert.ok(unavailable, 'the existing unavailable selection needs a removal control')
+    assert.equal(unavailable.unavailable, true)
+    if (!draft.especialidades.includes('eletrica')) draft.especialidades = toggleProfileSpecialty(draft.especialidades, 'eletrica', categories)
+    draft.especialidades = toggleProfileSpecialty(draft.especialidades, unavailable.id, categories)
+    assert.deepEqual(draft.especialidades, ['eletrica'])
+    assert.ok(!getProfileSpecialtyOptions(categories, draft.especialidades).some((option) => option.id === 'inactive'))
+    assert.deepEqual(toggleProfileSpecialty(draft.especialidades, 'inactive', categories), ['eletrica'], 'removed inactive codes cannot be reselected')
+    await updateProviderProfile(draft, { auth, availableSpecialties: ['eletrica'] })
+    assert.equal(writes, 1)
+    draft.especialidades = toggleProfileSpecialty(draft.especialidades, 'eletrica', categories)
+    await assert.rejects(updateProviderProfile(draft, { auth, availableSpecialties: ['eletrica'] }))
+    assert.equal(writes, 1, 'an empty final selection must not send PATCH')
+  }
+})

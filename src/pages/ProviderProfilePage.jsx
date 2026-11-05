@@ -2,7 +2,7 @@
 import ProviderSidebar from '../components/ProviderSidebar'
 import { useProviderSession } from '../hooks/useProviderSession'
 import { getServiceCategories } from '../services/serviceCategories'
-import { updateProviderProfile, validateProviderProfile } from '../services/fornecedores'
+import { getProfileSpecialtyOptions, toggleProfileSpecialty, updateProviderProfile, validateProviderProfile } from '../services/fornecedores'
 import { BRAZILIAN_STATES, formatDocument } from '../services/registrationValidation'
 import './ProviderProfilePage.css'
 
@@ -65,7 +65,7 @@ function ProviderProfilePage() {
     setDraft((current) => ({ ...current, [name]: value }))
   }
   function toggleCategory(id) {
-    setDraft((current) => ({ ...current, especialidades: current.especialidades.includes(id) ? current.especialidades.filter((code) => code !== id) : [...current.especialidades, id] }))
+    setDraft((current) => ({ ...current, especialidades: toggleProfileSpecialty(current.especialidades, id, categories) }))
   }
   async function saveProfile(event) {
     event.preventDefault()
@@ -121,7 +121,7 @@ function ProviderProfilePage() {
                     {!categoriesLoading && catalogUnavailable && <div className="profile-catalog-error" role="alert"><p>{categoryLoadError || 'Nenhuma especialidade está disponível no momento.'}</p><button type="button" onClick={retryCategories}>Tentar novamente</button></div>}
                     <div className="profile-category-summary">{values.especialidades.map((id) => <span key={id}>{categories.find((category) => category.id === id)?.name ?? id}</span>)}</div>
                   </div>
-                  {isEditing && <div className="profile-category-options">{categories.map((category) => <button type="button" className={draft.especialidades.includes(category.id) ? 'selected' : ''} aria-pressed={draft.especialidades.includes(category.id)} key={category.id} onClick={() => toggleCategory(category.id)}>{category.name}</button>)}</div>}
+                  {isEditing && <div className="profile-category-options">{getProfileSpecialtyOptions(categories, draft.especialidades).map((category) => <button type="button" className={draft.especialidades.includes(category.id) ? 'selected' : ''} aria-pressed={draft.especialidades.includes(category.id)} key={category.id} onClick={() => toggleCategory(category.id)}>{category.unavailable ? `${category.name} (indisponível; remover)` : category.name}</button>)}</div>}
                   <label className="profile-field wide"><span>Bio profissional (opcional)</span><textarea name="bio" value={values.bio} onChange={updateField} readOnly={!isEditing} rows="4" maxLength={360} /></label>
                   <Field label="Registro profissional (opcional)" name="registroProfissional" value={values.registroProfissional} editing={isEditing} onChange={updateField} maxLength={80} optional wide />
                 </div>

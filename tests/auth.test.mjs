@@ -181,3 +181,25 @@ test('a cancelled protected profile read cannot publish its late response', asyn
   await assert.rejects(pending, (e) => e.name === 'AbortError')
   assert.equal(auth.getSnapshot().accessToken, 'access-one')
 })
+
+test('abandoning login cannot persist a late session or cancel a newer successful login', async () => {
+  let release
+  let attempts = 0
+  const { auth } = client(async () => ++attempts === 1 ? new Promise((resolve) => { release = () => resolve(response(200, session({ accessToken: 'abandoned' }))) }) : response(200, session({ accessToken: 'new-login' })))
+  const controller = new AbortController()
+  const abandoned = auth.login({ email: 'provider@example.invalid', password: 'test', signal: controller.signal })
+  controller.abort()
+  assert.equal(auth.getSnapshot(), null)
+  await auth.login({ email: 'provider@example.invalid', password: 'test' })
+  release()
+  await assert.rejects(abandoned)
+  assert.equal(auth.getSnapshot().accessToken, 'new-login')
+})
+
+test('cancelling a completed login while its profile loads clears only that operation session', async () => {
+  const { auth } = client(async () => response(200, session()))
+  const controller = new AbortController()
+  await auth.login({ email: 'provider@example.invalid', password: 'test', signal: controller.signal })
+  controller.abort()
+  assert.equal(auth.getSnapshot(), null)
+})
