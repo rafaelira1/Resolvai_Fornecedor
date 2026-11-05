@@ -21,6 +21,7 @@ function ProviderSidebar({ displayName = 'Carlos Silva', activePage = 'profile',
         <span>Menu</span>
         <a href="/home" aria-current={currentPage === 'home' ? 'page' : undefined}>Home</a>
         <a href="/oportunidades" aria-current={currentPage === 'opportunities' ? 'page' : undefined}>Oportunidades</a>
+        <a href="/pedidos" aria-current={currentPage === 'orders' ? 'page' : undefined}>Meus Pedidos</a>
       </nav>
 
       <div className="provider-sidebar-account">

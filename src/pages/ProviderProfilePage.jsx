@@ -36,10 +36,14 @@ function Icon({ name }) {
 }
 
 function Field({ label, name, value, editing, onChange, type = 'text', wide = false, optional = false, children }) {
+  if (children) {
+    return <div className={`profile-field ${wide ? 'wide' : ''}`} role="group" aria-label={label}><span>{label}</span>{children}</div>
+  }
+
   return (
     <label className={`profile-field ${wide ? 'wide' : ''}`}>
       <span>{label}</span>
-      {children ?? <input name={name} type={type} value={value} onChange={onChange} readOnly={!editing} required={!optional} />}
+      <input name={name} type={type} value={value} onChange={onChange} readOnly={!editing} required={!optional} />
     </label>
   )
 }
@@ -52,11 +56,31 @@ function ProviderProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [saved, setSaved] = useState(false)
   const [categoryError, setCategoryError] = useState(false)
+  const [categoriesLoading, setCategoriesLoading] = useState(true)
+  const [categoryLoadError, setCategoryLoadError] = useState('')
+  const [categoryReload, setCategoryReload] = useState(0)
 
   useEffect(() => {
     document.title = 'Meu perfil | ResolvAI Fornecedor'
-    getServiceCategories().then(setCategories)
-  }, [])
+    const controller = new AbortController()
+    getServiceCategories({ signal: controller.signal })
+      .then((items) => { if (!controller.signal.aborted) setCategories(items) })
+      .catch((error) => {
+        if (controller.signal.aborted) return
+        setCategories([])
+        setCategoryLoadError(error.message || 'Não foi possível carregar as especialidades.')
+      })
+      .finally(() => { if (!controller.signal.aborted) setCategoriesLoading(false) })
+    return () => controller.abort()
+  }, [categoryReload])
+
+  const catalogUnavailable = categoriesLoading || Boolean(categoryLoadError) || categories.length === 0
+
+  function retryCategories() {
+    setCategoriesLoading(true)
+    setCategoryLoadError('')
+    setCategoryReload((current) => current + 1)
+  }
 
   const categoryNames = profile.categoryIds
     .map((id) => categories.find((category) => category.id === id)?.name)
@@ -93,7 +117,7 @@ function ProviderProfilePage() {
   function saveProfile(event) {
     event.preventDefault()
     if (!event.currentTarget.reportValidity()) return
-    if (draft.categoryIds.length === 0) {
+    if (catalogUnavailable || draft.categoryIds.length === 0 || draft.categoryIds.some((id) => !categories.some((category) => category.id === id))) {
       setCategoryError(true)
       return
     }
@@ -146,6 +170,8 @@ function ProviderProfilePage() {
                 <Field label="Cidade" name="city" value={draft.city} editing={isEditing} onChange={updateField} />
                 <Field label="Raio de atendimento" name="radius" value={draft.radius} editing={isEditing} onChange={updateField} />
                 <Field label="Especialidades" wide>
+                  {categoriesLoading && <p className="profile-catalog-status" role="status">Carregando especialidades…</p>}
+                  {!categoriesLoading && catalogUnavailable && <div className="profile-catalog-error" role="alert"><p>{categoryLoadError || 'Nenhuma especialidade está disponível no momento.'}</p><button type="button" onClick={retryCategories}>Tentar novamente</button></div>}
                   <div className="profile-category-summary">{(isEditing ? draft.categoryIds : profile.categoryIds).map((id) => <span key={id}>{categories.find((category) => category.id === id)?.name ?? id}</span>)}</div>
                 </Field>
                 {isEditing && <div className="profile-category-options">{categories.map((category) => <button type="button" className={draft.categoryIds.includes(category.id) ? 'selected' : ''} aria-pressed={draft.categoryIds.includes(category.id)} key={category.id} onClick={() => toggleCategory(category.id)}><span>{draft.categoryIds.includes(category.id) && <Icon name="check" />}</span>{category.name}</button>)}{categoryError && <p className="profile-category-error" role="alert">Selecione pelo menos uma especialidade.</p>}</div>}
@@ -169,7 +195,7 @@ function ProviderProfilePage() {
               </div>
             </section>
 
-            {isEditing && <div className="profile-form-actions"><button className="profile-cancel-button" type="button" onClick={cancelEditing}><Icon name="close" />Cancelar</button><button className="profile-save-button" type="submit"><Icon name="check" />Salvar alterações</button></div>}
+            {isEditing && <div className="profile-form-actions"><button className="profile-cancel-button" type="button" onClick={cancelEditing}><Icon name="close" />Cancelar</button><button className="profile-save-button" type="submit" disabled={catalogUnavailable}><Icon name="check" />Salvar alterações</button></div>}
           </form>
 
           <aside className="profile-side-column">

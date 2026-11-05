@@ -153,3 +153,9 @@
 @media (prefers-reduced-motion: reduce) {
   .profile-edit-button, .profile-save-button, .profile-field input, .profile-field textarea { transition: none; }
 }
+
+.profile-catalog-status { margin: 0 0 8px; color: #687589; font-size: 12px; }
+.profile-catalog-error { margin-bottom: 10px; padding: 12px; border: 1px solid #f3cabf; border-radius: 9px; color: #9b2b19; background: #fff5f1; font-size: 12px; }
+.profile-catalog-error p { margin: 0; line-height: 1.5; }
+.profile-catalog-error button { margin-top: 9px; padding: 7px 10px; border: 1px solid #e3a695; border-radius: 7px; color: #9b2b19; background: white; font: inherit; font-weight: 700; cursor: pointer; }
+.profile-save-button:disabled { opacity: .55; cursor: not-allowed; transform: none; box-shadow: none; }

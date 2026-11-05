@@ -1,5 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import ProviderSidebar from '../components/ProviderSidebar'
+import { formatOrderCurrency, orderStatuses } from '../data/orders'
+import { loadOrders } from '../services/orders'
 import './HomePage.css'
 
 const summaryCards = [
@@ -68,36 +70,6 @@ const recentOpportunities = [
   },
 ]
 
-const activeOrders = [
-  {
-    id: 1,
-    title: 'Impermeabilização de garagem',
-    customer: 'Ana Rodrigues',
-    deadline: '22 de setembro',
-    status: 'Em execução',
-    progress: 68,
-    value: 'R$ 4.200',
-  },
-  {
-    id: 2,
-    title: 'Instalação elétrica residencial',
-    customer: 'Marcos Lima',
-    deadline: '25 de setembro',
-    status: 'Aguardando material',
-    progress: 35,
-    value: 'R$ 1.850',
-  },
-  {
-    id: 3,
-    title: 'Pintura de apartamento',
-    customer: 'Carla Souza',
-    deadline: '30 de setembro',
-    status: 'Vistoria agendada',
-    progress: 15,
-    value: 'R$ 6.300',
-  },
-]
-
 function SummaryCard({ label, value, detail, color }) {
   return (
     <article className={`home-summary-card home-summary-card--${color}`}>
@@ -120,8 +92,18 @@ function Compatibility({ value }) {
 }
 
 function HomePage() {
+  const [orders, setOrders] = useState(loadOrders)
+  const activeOrders = orders.filter((order) => order.status !== 'completed')
+
   useEffect(() => {
     document.title = 'Home | ResolvAI Fornecedor'
+    const refresh = () => setOrders(loadOrders())
+    window.addEventListener('storage', refresh)
+    window.addEventListener('pageshow', refresh)
+    return () => {
+      window.removeEventListener('storage', refresh)
+      window.removeEventListener('pageshow', refresh)
+    }
   }, [])
 
   return (
@@ -186,7 +168,7 @@ function HomePage() {
               <p>Serviços contratados</p>
               <h2 id="active-orders-title">Pedidos em andamento</h2>
             </div>
-            <span className="home-active-count">3 pedidos ativos</span>
+            <a href="/pedidos">Ver todos ({activeOrders.length} ativos)</a>
           </header>
 
           <div className="home-table-scroll">
@@ -206,16 +188,16 @@ function HomePage() {
                   <strong className="home-order-title" role="cell">{order.title}</strong>
                   <span role="cell">{order.customer}</span>
                   <span role="cell">{order.deadline}</span>
-                  <div role="cell"><span className="home-order-status">{order.status}</span></div>
-                  <div className="home-order-progress" role="cell" aria-label={`${order.progress}% concluído`}>
+                  <div role="cell"><span className="home-order-status">{orderStatuses[order.status].label}</span></div>
+                  <div className="home-order-progress" role="cell" aria-label={`${orderStatuses[order.status].progress}% concluído`}>
                     <span className="home-progress-track" aria-hidden="true">
-                      <span style={{ width: `${order.progress}%` }} />
+                      <span style={{ width: `${orderStatuses[order.status].progress}%` }} />
                     </span>
-                    <strong>{order.progress}%</strong>
+                    <strong>{orderStatuses[order.status].progress}%</strong>
                   </div>
-                  <strong className="home-value" role="cell">{order.value}</strong>
+                  <strong className="home-value" role="cell">{formatOrderCurrency(order.value)}</strong>
                   <div role="cell">
-                    <button className="home-secondary-button" type="button">Detalhes</button>
+                    <a className="home-secondary-button" href={`/pedidos/detalhes?id=${order.id}`}>Detalhes</a>
                   </div>
                 </div>
               ))}

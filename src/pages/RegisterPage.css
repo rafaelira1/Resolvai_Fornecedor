@@ -220,7 +220,7 @@
 
 .register-field > span em { color: #9aa4b1; font-size: 10px; font-style: normal; font-weight: 650; }
 
-.register-field > input {
+.register-field > :is(input, select, textarea) {
   width: 100%;
   height: 54px;
   padding: 0 16px;
@@ -233,12 +233,12 @@
   transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
 }
 
-.register-field > input::placeholder { color: #9ba5b3; }
-.register-field > input:focus { border-color: var(--orange); background: white; box-shadow: 0 0 0 4px rgba(255, 79, 31, 0.09); }
+.register-field > :is(input, select, textarea)::placeholder { color: #9ba5b3; }
+.register-field > :is(input, select, textarea):focus { border-color: var(--orange); background: white; box-shadow: 0 0 0 4px rgba(255, 79, 31, 0.09); }
 .register-field > small { margin-top: 7px; color: #8994a3; font-size: 11px; line-height: 1.45; }
 
 .register-categories-step,
-.register-documents-step { display: flex; flex-direction: column; gap: 25px; }
+.register-review-step { display: flex; flex-direction: column; gap: 25px; }
 
 .category-fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .category-fieldset > p { margin: -2px 0 16px; color: #7b8798; font-size: 13px; }
@@ -282,54 +282,6 @@
 .category-check svg { width: 12px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 .category-card.selected .category-check { display: grid; }
 .register-error { display: block; margin-top: 10px; color: #c92f16; font-size: 12px; font-weight: 650; }
-
-.document-upload,
-.portfolio-upload {
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  border: 1px solid var(--register-border);
-  border-radius: 13px;
-  background: var(--register-soft);
-  cursor: pointer;
-  transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
-}
-
-.document-upload { min-height: 82px; padding: 14px 15px; gap: 14px; }
-.document-upload:hover,
-.portfolio-upload:hover { border-color: var(--orange); background: #fffaf7; box-shadow: 0 0 0 4px rgba(255, 79, 31, 0.07); }
-.document-upload input,
-.portfolio-upload input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-
-.upload-icon,
-.portfolio-icon {
-  flex: 0 0 auto;
-  display: grid;
-  place-items: center;
-  color: var(--orange);
-  background: #fff0e9;
-}
-
-.upload-icon { width: 44px; height: 44px; border-radius: 11px; }
-.upload-icon svg,
-.portfolio-icon svg { width: 21px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-.upload-copy { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 4px; }
-.upload-copy strong { overflow: hidden; color: #2a3548; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
-.upload-copy small { color: #8a95a5; font-size: 11px; }
-.upload-action,
-.portfolio-action { color: var(--orange-dark); font-size: 12px; font-weight: 800; }
-
-.portfolio-upload { min-height: 164px; padding: 24px; flex-direction: column; justify-content: center; border-style: dashed; text-align: center; }
-.portfolio-icon { width: 46px; height: 46px; margin-bottom: 10px; border-radius: 13px; }
-.portfolio-upload > strong { color: #344055; font-size: 14px; }
-.portfolio-upload > small { margin: 6px 0 12px; color: #8a95a5; font-size: 11px; }
-.portfolio-action { padding: 7px 13px; border: 1px solid #ffd0bf; border-radius: 8px; background: #fff4ef; }
-
-.selected-files { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.selected-files span { min-width: 0; padding: 9px 11px; display: flex; align-items: center; gap: 8px; overflow: hidden; border-radius: 8px; color: #647185; background: #f5f7f9; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-.selected-files svg { width: 15px; flex: 0 0 auto; fill: none; stroke: var(--orange); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-.complete-later-note { margin: -7px 0 0; color: #8994a3; font-size: 12px; text-align: center; }
 
 .register-actions { margin-top: 35px; padding-top: 25px; display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #edf0f3; }
 .register-primary-button,
@@ -410,7 +362,7 @@
   .register-form { padding: 0; border: 0; border-radius: 0; box-shadow: none; }
   .register-fields-grid { grid-template-columns: 1fr; gap: 19px; }
   .register-field-wide { grid-column: auto; }
-  .register-field > input { height: 51px; }
+  .register-field > :is(input, select, textarea) { height: 51px; }
   .category-grid { gap: 9px; }
   .category-card { min-height: 90px; }
   .category-icon { width: 32px; height: 32px; }
@@ -426,12 +378,38 @@
   .category-card { min-height: 88px; padding-inline: 6px; font-size: 12px; }
   .register-actions { gap: 8px; }
   .register-primary-button, .register-secondary-button { padding-inline: 14px; font-size: 13px; }
-  .upload-action { display: none; }
-  .selected-files { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .category-card,
   .register-primary-button,
-  .register-field > input { transition: none; }
+  .register-field > :is(input, select, textarea) { transition: none; }
+}
+
+.register-inputs { min-width: 0; margin: 0; padding: 0; border: 0; }
+.register-visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.register-form-heading div:last-child { min-width: 0; grid-template-columns: 1fr; row-gap: 4px; }
+.register-field > textarea { min-height: 112px; height: auto; padding: 14px 16px; resize: vertical; line-height: 1.55; }
+.register-field > :is(input, select, textarea)[aria-invalid="true"] { border-color: #c92f16; }
+.register-field > small.register-error { color: #b52c18; }
+.register-message { margin: 0 0 22px; padding: 14px 16px; border: 1px solid var(--register-border); border-radius: 11px; font-size: 13px; line-height: 1.55; overflow-wrap: anywhere; }
+.register-message p { margin: 0; }
+.register-message-error { border-color: #f3cabf; color: #9b2b19; background: #fff5f1; }
+.register-message button { margin-top: 10px; padding: 7px 10px; border: 1px solid #e3a695; border-radius: 7px; color: #9b2b19; background: white; font: inherit; font-weight: 750; cursor: pointer; }
+.register-catalog-status { color: #657285; font-size: 13px; }
+.register-review-intro { margin: 0; color: #657285; font-size: 14px; line-height: 1.6; }
+.register-review-section { padding: 19px; border: 1px solid var(--register-border); border-radius: 12px; background: #fcfdfe; }
+.register-review-section h3 { margin: 0 0 18px; color: #344055; font-size: 15px; }
+.register-review-grid { margin: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
+.register-review-row { min-width: 0; }
+.register-review-row dt { margin-bottom: 5px; color: #7b8798; font-size: 11px; font-weight: 700; }
+.register-review-row dd { margin: 0; color: #172238; font-size: 14px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.register-review-specialties { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 7px; }
+.register-review-specialties span { padding: 6px 10px; border-radius: 7px; color: #b43e1f; background: #fff0e9; font-size: 12px; font-weight: 700; }
+.register-form button:disabled { opacity: .55; cursor: not-allowed; transform: none; box-shadow: none; }
+.register-form :is(button, a):focus-visible { outline: 3px solid #b43e1f; outline-offset: 3px; }
+
+@media (max-width: 760px) {
+  .register-review-section { padding: 16px; }
+  .register-review-grid { grid-template-columns: minmax(0, 1fr); gap: 15px; }
 }
