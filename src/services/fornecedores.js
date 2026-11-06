@@ -16,7 +16,7 @@ export function toggleProfileSpecialty(selected, id, categories) {
   return categories.some((category) => category.id === id) ? [...selected, id] : selected
 }
 
-function confirmProfile(profile, auth) {
+function confirmProfile(profile, auth, sessionId) {
   if (!hasValidProfile(profile)
     || ['name', 'email', 'telefone'].some((field) => typeof profile[field] !== 'string' || !profile[field].trim())
     || (profile.bio != null && typeof profile.bio !== 'string')
@@ -24,7 +24,7 @@ function confirmProfile(profile, auth) {
     || (profile.cpf != null && typeof profile.cpf !== 'string')) {
     throw new ApiError('O serviço retornou um perfil inválido. Tente carregar novamente.')
   }
-  auth.setProfile(profile)
+  auth.setProfile(profile, sessionId)
   return profile
 }
 
@@ -39,10 +39,12 @@ export function validateProviderProfile(values, availableSpecialties) {
 }
 
 export async function getProviderProfile({ auth = authSession, signal } = {}) {
-  return confirmProfile(await auth.request('/api/v1/fornecedores/me', { signal }), auth)
+  const sessionId = auth.getSnapshot()?.sessionId
+  return confirmProfile(await auth.request('/api/v1/fornecedores/me', { signal }), auth, sessionId)
 }
 
 export async function updateProviderProfile(values, { auth = authSession, availableSpecialties } = {}) {
+  const sessionId = auth.getSnapshot()?.sessionId
   const errors = validateProviderProfile(values, availableSpecialties)
   if (Object.keys(errors).length) throw new ApiError(Object.values(errors)[0], { status: 400 })
   const body = {
@@ -53,5 +55,5 @@ export async function updateProviderProfile(values, { auth = authSession, availa
     bio: values.bio?.trim() || null, registroProfissional: values.registroProfissional?.trim() || null,
     especialidades: [...new Set(values.especialidades.map((code) => code.trim()))].sort(),
   }
-  return confirmProfile(await auth.request('/api/v1/fornecedores/me', { method: 'PATCH', body }), auth)
+  return confirmProfile(await auth.request('/api/v1/fornecedores/me', { method: 'PATCH', body }), auth, sessionId)
 }

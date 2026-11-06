@@ -6,6 +6,7 @@ function browserStorage(name) {
 }
 
 export const authSession = createAuthClient({
+  storageEvents: typeof window === 'undefined' ? undefined : window,
   localStorage: browserStorage('localStorage'),
   sessionStorage: browserStorage('sessionStorage'),
 })

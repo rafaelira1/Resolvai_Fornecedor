@@ -193,7 +193,7 @@ function RegisterPage() {
           <div className="success-mark"><CheckIcon /></div>
           <p className="register-eyebrow">Cadastro realizado</p>
           <h1>Seu perfil profissional foi criado.</h1>
-          <p>Seus dados foram cadastrados com sucesso. Volte para a tela de entrada para acessar sua conta.</p>
+          <p>Seus dados foram cadastrados com sucesso. Se a confirmação de e-mail estiver habilitada, confira sua caixa de entrada e o spam e confirme seu e-mail antes de entrar. Se a confirmação não for solicitada, você já pode acessar sua conta.</p>
           <a className="register-primary-button" href="/login">Voltar para entrar <ArrowIcon /></a>
         </div>
       </main>

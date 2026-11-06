@@ -19,12 +19,15 @@ function sanitizeSession(value, now) {
   }
 }
 
-export function createAuthClient({ apiUrl, fetchImpl, localStorage, sessionStorage, now = Date.now } = {}) {
+export function createAuthClient({ apiUrl, fetchImpl, localStorage, sessionStorage, storageEvents, now = Date.now } = {}) {
   const listeners = new Set()
   let current = null
   let remember = false
   let generation = 0
   let refreshFlight = null
+  let rememberedRaw = null
+  let sessionId = null
+  function readRemembered() { try { return localStorage?.getItem(STORAGE_KEY) ?? null } catch { return null } }
   function remove(store) { try { store?.removeItem(STORAGE_KEY) } catch { /* Storage can be unavailable in private browsing. */ } }
   for (const [store, persistent] of [[sessionStorage, false], [localStorage, true]]) {
     try {
@@ -32,38 +35,77 @@ export function createAuthClient({ apiUrl, fetchImpl, localStorage, sessionStora
       if (!raw) continue
       const restored = sanitizeSession(JSON.parse(raw), now)
       if (!restored) { remove(store); continue }
-      if (!current) { current = restored; remember = persistent }
-      else remove(store)
+      if (!current) {
+        sessionId = JSON.parse(raw).sessionId ?? `legacy:${restored.accessToken}`
+        current = { ...restored, sessionId }
+        remember = persistent
+        if (persistent) rememberedRaw = raw
+      }
     } catch { remove(store) }
   }
   function emit() { listeners.forEach((listener) => listener()) }
+  // Storage events can be delayed. Every publication also checks the exact record
+  // it owns, so an obsolete tab cannot resurrect or erase another login.
+  function synchronize() {
+    if (!remember) return
+    const raw = readRemembered()
+    if (raw === rememberedRaw) return
+    let restored = null
+    let nextId = null
+    try {
+      const stored = JSON.parse(raw)
+      restored = sanitizeSession(stored, now)
+      nextId = stored?.sessionId ?? (restored ? `legacy:${restored.accessToken}` : null)
+    } catch { /* Removed or malformed shared record revokes this tab. */ }
+    const profile = nextId === sessionId && restored?.user.id === current?.user.id ? current?.profile : null
+    generation++
+    refreshFlight = null
+    rememberedRaw = raw
+    sessionId = nextId
+    current = restored ? { ...restored, sessionId, ...(profile ? { profile } : {}) } : null
+    emit()
+  }
+  storageEvents?.addEventListener('storage', (event) => {
+    if ((event.key === STORAGE_KEY || event.key === null) && event.storageArea === localStorage) synchronize()
+  })
+  function assertVersion(version) {
+    synchronize()
+    if (generation !== version) throw sessionError()
+  }
   function logout() {
     generation++
     current = null
     refreshFlight = null
-    remove(localStorage)
+    if (remember && readRemembered() === rememberedRaw) remove(localStorage)
     remove(sessionStorage)
+    remember = false
+    rememberedRaw = null
+    sessionId = null
     emit()
   }
-  function persist(value) {
+  function persist(value, version = generation) {
+    assertVersion(version)
     const target = remember ? localStorage : sessionStorage
     try {
       if (!target) throw new Error('Storage unavailable')
       // Store only the session contract; reload always confirms the profile through the API.
-      target.setItem(STORAGE_KEY, JSON.stringify({
+      const raw = JSON.stringify({
         accessToken: value.accessToken, tokenType: value.tokenType,
-        expiresAtUtc: value.expiresAtUtc, refreshToken: value.refreshToken, user: value.user,
-      }))
+        expiresAtUtc: value.expiresAtUtc, refreshToken: value.refreshToken, user: value.user, sessionId,
+      })
+      target.setItem(STORAGE_KEY, raw)
+      if (remember) rememberedRaw = raw
     }
     catch { logout(); throw new ApiError('Não foi possível guardar a sessão neste navegador. Habilite o armazenamento e tente novamente.') }
-    remove(remember ? sessionStorage : localStorage)
-    current = value
+    if (remember) remove(sessionStorage)
+    current = { ...value, sessionId }
     emit()
-    return value
+    return current
   }
   async function login({ email, password, remember: keep = false, signal }) {
     logout()
     const version = generation
+    const loginBaseline = readRemembered()
     // This signal owns the login and its subsequent profile verification, even
     // after the login response. Cancellation must never clear a newer login.
     const cancel = () => { if (generation === version) logout() }
@@ -72,17 +114,20 @@ export function createAuthClient({ apiUrl, fetchImpl, localStorage, sessionStora
       const result = await requestJson('/api/v1/auth/login-provider', {
         apiUrl, fetchImpl, signal, method: 'POST', body: { email: email.trim(), password },
       })
-      if (signal?.aborted || generation !== version) throw sessionError()
+      if (signal?.aborted || generation !== version || readRemembered() !== loginBaseline) throw sessionError()
       const valid = sanitizeSession(result, now)
       if (!valid || Date.parse(valid.expiresAtUtc) <= now()) throw new ApiError('O acesso exige uma conta profissional ativa e uma sessão válida.', { status: 403 })
       remember = keep === true
-      return persist(valid)
+      rememberedRaw = loginBaseline
+      sessionId = globalThis.crypto.getRandomValues(new Uint32Array(4)).join('-')
+      return persist(valid, version)
     } catch (error) {
       signal?.removeEventListener('abort', cancel)
       throw error
     }
   }
   function refresh() {
+    synchronize()
     if (refreshFlight) return refreshFlight
     if (!current?.refreshToken) { logout(); return Promise.reject(sessionError()) }
     const version = generation
@@ -92,13 +137,14 @@ export function createAuthClient({ apiUrl, fetchImpl, localStorage, sessionStora
         const result = await requestJson('/api/v1/auth/refresh', {
           apiUrl, fetchImpl, method: 'POST', body: { refreshToken: previous.refreshToken },
         })
-        if (generation !== version) throw sessionError()
+        assertVersion(version)
         const valid = sanitizeSession(result, now)
         if (!valid || Date.parse(valid.expiresAtUtc) <= now() || valid.user.id !== previous.user.id) throw sessionError()
         // Some providers omit a new refresh token when the old one remains valid.
         if (!valid.refreshToken) valid.refreshToken = previous.refreshToken
         return persist({ ...valid, ...(previous.profile ? { profile: previous.profile } : {}) })
       } catch (error) {
+        synchronize()
         if (generation === version) logout()
         throw error
       }
@@ -108,6 +154,7 @@ export function createAuthClient({ apiUrl, fetchImpl, localStorage, sessionStora
     return operation
   }
   async function request(path, options = {}) {
+    assertVersion(generation)
     if (!current) throw sessionError()
     if (Date.parse(current.expiresAtUtc) <= now()) await refresh()
     if (!current) throw sessionError()
@@ -115,26 +162,30 @@ export function createAuthClient({ apiUrl, fetchImpl, localStorage, sessionStora
     const usedToken = current.accessToken
     const send = async () => {
       const result = await requestJson(path, { ...options, apiUrl, fetchImpl, accessToken: current.accessToken, registration: false })
-      if (generation !== version) throw sessionError()
+      assertVersion(version)
       if (options.signal?.aborted) throw new DOMException('Solicitação cancelada.', 'AbortError')
       return result
     }
     try {
       return await send()
     } catch (error) {
-      if (generation !== version) throw sessionError()
+      assertVersion(version)
       if (error.status === 403 || error.status === 404) { logout(); throw error }
       if (error.status !== 401) throw error
       if (current?.accessToken === usedToken) await refresh()
       if (!current || generation !== version) throw sessionError()
       try { return await send() }
       catch (retryError) {
+        synchronize()
         if ([401, 403, 404].includes(retryError.status) && generation === version) logout()
         throw retryError
       }
     }
   }
-  function setProfile(profile) {
+  function setProfile(profile, expectedSessionId = current?.sessionId) {
+    const version = generation
+    assertVersion(version)
+    if (expectedSessionId !== current?.sessionId) throw sessionError()
     if (!current || profile.idUsuario !== current.user.id) { logout(); throw sessionError() }
     // Identity comes from the confirmed professional response, including after save.
     return persist({ ...current, user: { ...current.user, name: profile.name, email: profile.email }, profile })
