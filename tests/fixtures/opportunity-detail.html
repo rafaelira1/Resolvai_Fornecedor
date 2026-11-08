@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><title>Teste visual do detalhe</title></head>
+  <body>
+    <div id="root"></div>
+    <script type="module">
+      // Isolated visual fixture: no real login or database requests.
+      import React from 'react'
+      import { createRoot } from 'react-dom/client'
+      import '/src/index.css'
+      const id = '20000000-0000-4000-8000-000000000001'
+      const user = { id: '10000000-0000-4000-8000-000000000001', name: 'Fornecedor de teste', email: 'teste@example.invalid', role: 'Prestador', isActive: true }
+      sessionStorage.setItem('resolvai:provider-session:v1', JSON.stringify({ accessToken: 'synthetic-visual-token', tokenType: 'bearer', expiresAtUtc: '2099-01-01T00:00:00Z', sessionId: 'visual-test', user }))
+      const detail = {
+        id, title: 'Infiltração no Banheiro', category: 'Hidráulica', specialtyCode: 'hidraulica', location: 'Itaim Bibi, SP', urgency: 'Urgente', createdAt: '2026-11-08T12:00:00Z', proposalsCount: 2,
+        description: 'Água escorrendo pela parede do banheiro do 2º andar, com manchas de umidade visíveis no banheiro e no cômodo abaixo. O problema começou há três semanas, após um período de chuvas intensas. O piso apresenta pequenas rachaduras que podem estar relacionadas à infiltração.',
+        specifications: 'Diagnóstico completo da origem da infiltração\nImpermeabilização do piso do box\nTratamento das rachaduras na parede\nReparo do reboco danificado pela umidade\nPintura de acabamento a definir',
+        client: { name: 'Cliente de teste', memberSince: '2024-01-15T12:00:00Z', ordersCount: 7, completedOrdersCount: 4 },
+        photos: Array.from({ length: 5 }, (_, index) => ({ id: `30000000-0000-4000-8000-00000000000${index + 1}`, url: `${location.origin}/tests/fixtures/repair-photo.svg`, description: `Foto ${index + 1} da infiltração` })),
+      }
+      window.fetch = async (url, options) => {
+        if (!String(url).includes('/api/v1/fornecedores/me/oportunidades/')) throw new Error('Unexpected request in isolated visual fixture')
+        if (options?.method === 'POST') {
+          const proposal = JSON.parse(options.body.get('proposal'))
+          return Response.json({ id: proposal.requestId, orderId: id, status: 'Sent', value: proposal.valueCents / 100, portfolio: [] }, { status: 201 })
+        }
+        return Response.json(detail)
+      }
+      const proposalScreen = new URLSearchParams(location.search).get('screen') === 'proposal'
+      const { default: Page } = proposalScreen ? await import('/src/pages/SendProposalPage.jsx') : await import('/src/pages/OpportunityDetailsPage.jsx')
+      const { authSession } = await import('/src/services/session.js')
+      authSession.setProfile({ idUsuario: user.id, name: user.name, email: user.email, nomeExibicao: 'Fornecedor de teste', especialidades: ['hidraulica'], cidadeAtuacao: 'Fortaleza', ufAtuacao: 'CE' })
+      createRoot(document.getElementById('root')).render(React.createElement(Page))
+      const observer = new MutationObserver(() => {
+        if (!document.querySelector(proposalScreen ? '.send-proposal-layout' : '#order-title')) return
+        observer.disconnect()
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          document.body.dataset.previewReady = 'true'
+          document.body.dataset.horizontalOverflow = String(document.documentElement.scrollWidth > innerWidth)
+        }))
+      })
+      observer.observe(document.getElementById('root'), { childList: true, subtree: true })
+    </script>
+  </body>
+</html>
