@@ -8,7 +8,7 @@ export const BASIC_FIELDS = [
 ]
 
 export const PROFESSIONAL_FIELDS = [
-  'nomeExibicao', 'cidadeAtuacao', 'ufAtuacao', 'raioAtendimentoKm',
+  'nomeExibicao', 'cep', 'cidadeAtuacao', 'ufAtuacao', 'raioAtendimentoKm',
   'bio', 'registroProfissional', 'especialidades',
 ]
 
@@ -128,6 +128,9 @@ export function validateRegistration(values, { step, availableSpecialties } = {}
   }
 
   checkRequiredText(errors, 'nomeExibicao', data.nomeExibicao, 'o nome profissional ou comercial', 200)
+  if (!isBlank(data.cep) && (typeof data.cep !== 'string' || !/^[0-9]{5}-?[0-9]{3}$/.test(data.cep))) {
+    errors.cep = 'Informe um CEP com 8 dígitos ou deixe o campo vazio para preencher cidade e estado manualmente.'
+  }
   checkRequiredText(errors, 'cidadeAtuacao', data.cidadeAtuacao, 'a cidade de atuação', 120)
   if (typeof data.ufAtuacao !== 'string' || data.ufAtuacao.length !== 2
     || !BRAZILIAN_STATES.includes(data.ufAtuacao.toUpperCase())) {

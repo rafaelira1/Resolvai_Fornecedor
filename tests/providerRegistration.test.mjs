@@ -124,6 +124,23 @@ test('server errors report an uncertain registration and never retry automatical
   }
 })
 
+test('an explicit Auth configuration failure explains service unavailability without blaming the form or exposing details', async () => {
+  let attempts = 0
+  await assert.rejects(registerProvider(payload(), {
+    apiUrl,
+    fetchImpl: async () => {
+      attempts++
+      return jsonResponse(503, {
+        status: 503, code: 'AUTH_CONFIGURATION_ERROR',
+        detail: 'PRIVATE_RESPONSE_BODY', traceId: 'PRIVATE_TRACE',
+      })
+    },
+  }), (error) => error instanceof ApiError && error.status === 503 && !error.uncertain
+    && /configuração do serviço/.test(error.message)
+    && !error.message.includes('PRIVATE_RESPONSE_BODY') && !error.message.includes('PRIVATE_TRACE'))
+  assert.equal(attempts, 1)
+})
+
 test('unexpected success statuses cannot complete a registration', async () => {
   for (const status of [200, 202, 204]) {
     let attempts = 0

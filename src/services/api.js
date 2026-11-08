@@ -57,6 +57,29 @@ function httpError(status, write) {
   return new ApiError(uncertain ? REGISTRATION_UNCERTAIN_MESSAGE : 'Não foi possível concluir o cadastro neste momento. Tente novamente mais tarde.', { status, uncertain })
 }
 
+async function httpErrorResponse(response, write) {
+  let detail = ''
+  try {
+    const body = await response.clone().json()
+    if (write && response.status === 503 && body?.status === 503 && body?.code === 'AUTH_CONFIGURATION_ERROR') {
+      return new ApiError('O cadastro está indisponível por uma falha de configuração do serviço. Entre em contato com o suporte.', { status: 503 })
+    }
+    const messages = []
+    if (body?.errors && typeof body.errors === 'object') {
+      for (const value of Object.values(body.errors)) {
+        if (Array.isArray(value)) messages.push(...value.filter((item) => typeof item === 'string'))
+        else if (typeof value === 'string') messages.push(value)
+      }
+    }
+    detail = [...new Set(messages)].join(' ')
+  } catch {
+    // Keep the generic message when the server response is not a problem-details JSON.
+  }
+  const error = httpError(response.status, write)
+  if (write && response.status === 400 && detail) error.message = detail
+  return error
+}
+
 export async function requestJson(path, {
   method = 'GET',
   body,
@@ -75,9 +98,10 @@ export async function requestJson(path, {
     throw new ApiError(REGISTRATION_UNCERTAIN_MESSAGE, { uncertain: true })
   }
 
+  const multipart = typeof FormData !== 'undefined' && body instanceof FormData
   let serializedBody
   try {
-    serializedBody = body === undefined ? undefined : JSON.stringify(body)
+    serializedBody = body === undefined ? undefined : multipart ? body : JSON.stringify(body)
   } catch {
     throw new ApiError('Confira os dados do cadastro antes de enviar novamente.')
   }
@@ -93,7 +117,7 @@ export async function requestJson(path, {
       method,
       headers: {
         Accept: 'application/json',
-        ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+        ...(body === undefined || multipart ? {} : { 'Content-Type': 'application/json' }),
         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       },
       ...(body === undefined ? {} : { body: serializedBody }),
@@ -103,7 +127,7 @@ export async function requestJson(path, {
       signal: controller.signal,
     })
 
-    if (response.status !== expectedStatus) throw httpError(response.status, write)
+    if (response.status !== expectedStatus) throw await httpErrorResponse(response, write)
     const contentType = response.headers.get('content-type') ?? ''
     if (!/^application\/(?:[\w.+-]*\+)?json(?:\s*;|$)/i.test(contentType)) {
       throw new ApiError(write ? REGISTRATION_UNCERTAIN_MESSAGE : 'O serviço retornou uma resposta inválida. Tente novamente.', {

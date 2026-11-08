@@ -6,14 +6,15 @@ import LegalPage from './pages/LegalPage'
 import RegisterPage from './pages/RegisterPage'
 import ProviderProfilePage from './pages/ProviderProfilePage'
 import OpportunitiesPage from './pages/OpportunitiesPage'
-import OrderDetailsPage from './pages/OrderDetailsPage'
-import ProposalPage from './pages/ProposalPage'
+import OpportunityDetailsPage from './pages/OpportunityDetailsPage'
+import SendProposalPage from './pages/SendProposalPage'
 import PasswordRecoveryPage from './pages/PasswordRecoveryPage'
+import PasswordResetPage from './pages/PasswordResetPage'
 import OrdersPage from './pages/OrdersPage'
 import ServiceOrderPage from './pages/ServiceOrderPage'
 import ProviderGuard from './components/ProviderGuard'
 
-const publicPaths = new Set(['/', '/login', '/recuperar-senha', '/cadastro', '/criar-conta', '/termos', '/termos-de-uso', '/privacidade', '/politica-de-privacidade'])
+const publicPaths = new Set(['/', '/login', '/recuperar-senha', '/redefinir-senha', '/cadastro', '/criar-conta', '/termos', '/termos-de-uso', '/privacidade', '/politica-de-privacidade'])
 
 const screens = {
   '/': LoginPage,
@@ -22,13 +23,14 @@ const screens = {
   '/pedidos': OrdersPage,
   '/pedidos/detalhes': ServiceOrderPage,
   '/recuperar-senha': PasswordRecoveryPage,
+  '/redefinir-senha': PasswordResetPage,
   '/cadastro': RegisterPage,
   '/criar-conta': RegisterPage,
   '/perfil': ProviderProfilePage,
   '/meu-perfil': ProviderProfilePage,
   '/oportunidades': OpportunitiesPage,
-  '/oportunidades/detalhes': OrderDetailsPage,
-  '/oportunidades/proposta': ProposalPage,
+  '/oportunidades/detalhes': OpportunityDetailsPage,
+  '/oportunidades/proposta': SendProposalPage,
   '/termos': () => <LegalPage document="terms" />,
   '/termos-de-uso': () => <LegalPage document="terms" />,
   '/privacidade': () => <LegalPage document="privacy" />,

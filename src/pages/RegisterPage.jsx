@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { BrandLockup, BrandWordmark } from '../components/BrandLogo'
 import { getServiceCategories } from '../services/serviceCategories'
 import { registerProvider } from '../services/providerRegistration'
+import { formatCep, lookupCep } from '../services/viaCep'
 import {
   BASIC_FIELDS,
   BRAZILIAN_STATES,
@@ -20,7 +21,7 @@ const steps = [
 
 const initialForm = {
   name: '', email: '', password: '', passwordConfirmation: '', tipoPessoa: 'PF',
-  nomeExibicao: '', cpf: '', cnpj: '', telefone: '', cidadeAtuacao: '', ufAtuacao: '',
+  nomeExibicao: '', cpf: '', cnpj: '', telefone: '', cep: '', cidadeAtuacao: '', ufAtuacao: '',
   raioAtendimentoKm: '20', bio: '', registroProfissional: '', especialidades: [],
 }
 
@@ -44,7 +45,7 @@ function CategoryIcon({ name }) {
   return <svg viewBox="0 0 24 24" aria-hidden="true">{paths[name] ?? paths.tools}</svg>
 }
 
-function RegistrationField({ label, name, value, onChange, error, hint, wide = false, optional = false, multiline = false, children, ...props }) {
+function RegistrationField({ label, name, value, onChange, error, hint, wide = false, optional = false, multiline = false, liveMessage = false, children, ...props }) {
   const id = `register-${name}`
   const controlProps = {
     id, name, value, onChange,
@@ -56,7 +57,7 @@ function RegistrationField({ label, name, value, onChange, error, hint, wide = f
     <label className={`register-field${wide ? ' register-field-wide' : ''}`} htmlFor={id}>
       <span>{label}{optional && <em> Opcional</em>}</span>
       {children ? <select {...controlProps}>{children}</select> : multiline ? <textarea {...controlProps} /> : <input {...controlProps} />}
-      {(error || hint) && <small id={`${id}-message`} className={error ? 'register-error' : undefined}>{error || hint}</small>}
+      {(error || hint) && <small id={`${id}-message`} className={error ? 'register-error' : undefined} aria-live={liveMessage ? 'polite' : undefined}>{error || hint}</small>}
     </label>
   )
 }
@@ -76,6 +77,8 @@ function RegisterPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submissionError, setSubmissionError] = useState('')
   const [completed, setCompleted] = useState(false)
+  const [cepStatus, setCepStatus] = useState({ loading: false, error: '', message: '' })
+  const cepLookupRef = useRef(null)
   const submittingRef = useRef(false)
   const focusTarget = useRef(null)
   const mountedRef = useRef(false)
@@ -83,7 +86,10 @@ function RegisterPage() {
   useEffect(() => {
     document.title = 'Criar conta | ResolvAI Fornecedor'
     mountedRef.current = true
-    return () => { mountedRef.current = false }
+    return () => {
+      mountedRef.current = false
+      cepLookupRef.current?.abort()
+    }
   }, [])
 
   useEffect(() => {
@@ -108,6 +114,45 @@ function RegisterPage() {
     document.getElementById(focusTarget.current)?.focus()
     focusTarget.current = null
   }, [step, errors])
+
+  function cancelCepLookup() {
+    cepLookupRef.current?.abort()
+    cepLookupRef.current = null
+    setCepStatus({ loading: false, error: '', message: '' })
+  }
+
+  async function updateCep(value) {
+    cancelCepLookup()
+    const cep = formatCep(value)
+    setFormData((current) => ({ ...current, cep }))
+    setErrors((current) => ({ ...current, cep: undefined }))
+    if (cep.length !== 9) return
+
+    const controller = new AbortController()
+    cepLookupRef.current = controller
+    setCepStatus({ loading: true, error: '', message: 'Consultando CEP…' })
+    try {
+      const address = await lookupCep(cep, { signal: controller.signal })
+      if (controller.signal.aborted) return
+      setFormData((current) => ({ ...current, ...address }))
+      setErrors((current) => ({ ...current, cidadeAtuacao: undefined, ufAtuacao: undefined }))
+      setCepStatus({ loading: false, error: '', message: 'Cidade e estado preenchidos. Você pode ajustá-los se necessário.' })
+    } catch (error) {
+      if (!controller.signal.aborted) setCepStatus({ loading: false, error: error.message, message: '' })
+    } finally {
+      if (cepLookupRef.current === controller) cepLookupRef.current = null
+    }
+  }
+
+  function validateCepOnBlur() {
+    const { cep } = validateRegistration(formData, { step: 1 })
+    setErrors((current) => ({ ...current, cep }))
+  }
+
+  function updateLocationField(event) {
+    cancelCepLookup()
+    updateField(event)
+  }
 
   function updateField(event) {
     const { name, value } = event.target
@@ -136,6 +181,7 @@ function RegisterPage() {
   }
 
   function goToStep(nextStep) {
+    cancelCepLookup()
     setStep(nextStep)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -148,7 +194,7 @@ function RegisterPage() {
 
   async function handleSubmit(event) {
     event.preventDefault()
-    if (submittingRef.current) return
+    if (submittingRef.current || (step === 1 && cepLookupRef.current)) return
     const nextErrors = validateRegistration(formData, {
       step: step < 2 ? step : undefined,
       availableSpecialties: categories.map((category) => category.id),
@@ -249,8 +295,9 @@ function RegisterPage() {
               {step === 1 && <div className="register-categories-step">
                 <div className="register-fields-grid">
                   <RegistrationField label="Nome profissional ou comercial" {...fieldProps('nomeExibicao')} maxLength={200} hint="Nome que será exibido aos clientes." required wide />
-                  <RegistrationField label="Cidade de atuação" {...fieldProps('cidadeAtuacao')} autoComplete="address-level2" maxLength={120} required />
-                  <RegistrationField label="UF" {...fieldProps('ufAtuacao')} autoComplete="address-level1" required><option value="">Selecione</option>{BRAZILIAN_STATES.map((uf) => <option key={uf} value={uf}>{uf}</option>)}</RegistrationField>
+                  <RegistrationField label="CEP" {...fieldProps('cep')} onChange={(event) => { void updateCep(event.target.value) }} inputMode="numeric" autoComplete="postal-code" placeholder="00000-000" maxLength={9} onBlur={validateCepOnBlur} error={errors.cep || cepStatus.error} hint={cepStatus.message || 'Informe o CEP para preencher cidade e estado automaticamente pelo ViaCEP.'} aria-busy={cepStatus.loading} liveMessage optional wide />
+                  <RegistrationField label="Cidade de atuação" {...fieldProps('cidadeAtuacao')} onChange={updateLocationField} autoComplete="address-level2" maxLength={120} required />
+                  <RegistrationField label="UF" {...fieldProps('ufAtuacao')} onChange={updateLocationField} autoComplete="address-level1" required><option value="">Selecione</option>{BRAZILIAN_STATES.map((uf) => <option key={uf} value={uf}>{uf}</option>)}</RegistrationField>
                   <RegistrationField label="Raio de atendimento (km)" {...fieldProps('raioAtendimentoKm')} type="number" min={1} max={200} step={1} hint="Padrão: 20 km. Máximo: 200 km." optional />
                   <RegistrationField label="Registro profissional" {...fieldProps('registroProfissional')} maxLength={80} optional />
                   <RegistrationField label="Bio profissional" {...fieldProps('bio')} multiline rows={4} maxLength={360} hint="Conte um pouco sobre seu trabalho. Até 360 caracteres." optional wide />
@@ -275,7 +322,7 @@ function RegisterPage() {
             </fieldset>
             <div className="register-actions">
               <button className="register-secondary-button" type="button" disabled={submitting} onClick={() => step === 0 ? window.location.assign('/login') : goToStep(step - 1)}><ArrowIcon direction="left" /> Voltar</button>
-              <button className="register-primary-button" type="submit" disabled={submitting || (step > 0 && catalogUnavailable)}>{submitting ? 'Enviando…' : step === 2 ? 'Concluir cadastro' : 'Continuar'}{step === 2 ? <CheckIcon /> : <ArrowIcon />}</button>
+              <button className="register-primary-button" type="submit" disabled={submitting || (step === 1 && cepStatus.loading) || (step > 0 && catalogUnavailable)}>{submitting ? 'Enviando…' : step === 2 ? 'Concluir cadastro' : 'Continuar'}{step === 2 ? <CheckIcon /> : <ArrowIcon />}</button>
             </div>
           </form>
           <footer className="register-footer">Ao criar sua conta, você concorda com os <a href="/termos-de-uso">Termos de Uso</a> e a <a href="/politica-de-privacidade">Política de Privacidade</a>.</footer>

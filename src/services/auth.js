@@ -160,6 +160,7 @@ export function createAuthClient({ apiUrl, fetchImpl, localStorage, sessionStora
     if (!current) throw sessionError()
     const version = generation
     const usedToken = current.accessToken
+    const invalidatesSession = (status) => status === 403 || (status === 404 && options.invalidateOnNotFound !== false)
     const send = async () => {
       const result = await requestJson(path, { ...options, apiUrl, fetchImpl, accessToken: current.accessToken, registration: false })
       assertVersion(version)
@@ -170,14 +171,14 @@ export function createAuthClient({ apiUrl, fetchImpl, localStorage, sessionStora
       return await send()
     } catch (error) {
       assertVersion(version)
-      if (error.status === 403 || error.status === 404) { logout(); throw error }
+      if (invalidatesSession(error.status)) { logout(); throw error }
       if (error.status !== 401) throw error
       if (current?.accessToken === usedToken) await refresh()
       if (!current || generation !== version) throw sessionError()
       try { return await send() }
       catch (retryError) {
         synchronize()
-        if ([401, 403, 404].includes(retryError.status) && generation === version) logout()
+        if ((retryError.status === 401 || invalidatesSession(retryError.status)) && generation === version) logout()
         throw retryError
       }
     }

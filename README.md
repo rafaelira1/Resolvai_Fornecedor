@@ -16,6 +16,18 @@ no lugar de `npm`.
 Para gerar a versao de producao, execute `npm run build`.
 Para verificar o codigo, execute `npm run lint`.
 
+## Consulta de CEP no cadastro
+
+Na etapa 2, o campo opcional CEP consulta `https://viacep.com.br/ws/{cep}/json/`
+ao completar 8 digitos e preenche cidade de atuacao e UF. Os campos continuam
+editaveis. A consulta tem limite de 8 segundos; se o CEP nao existir ou o servico
+falhar, a interface orienta o preenchimento manual. Consultas anteriores sao
+canceladas ao trocar o CEP, editar cidade/UF ou sair da etapa.
+
+O CEP serve apenas para facilitar o preenchimento: o contrato atual da API
+continua recebendo `cidadeAtuacao` e `ufAtuacao`, sem armazenar o CEP. O ViaCEP
+e consultado diretamente pelo navegador, sem chaves ou configuracao adicional.
+
 ## Documentacao original do template
 
 # React + Vite
@@ -95,7 +107,8 @@ Nome da conta, nome profissional, telefone, cidade, UF, raio, bio, registro e
 especialidades são editáveis. E-mail, tipo e CPF/CNPJ são somente leitura. Campos
 opcionais podem ser limpos. Não há portfólio, métricas ou selo de verificação
 fictícios na tela de perfil. Os fluxos demonstrativos existentes de pedidos,
-oportunidades, propostas e métricas da Home permanecem sem nova integração.
+propostas e métricas da Home permanecem sem nova integração. O painel de
+oportunidades usa os pedidos reais, conforme descrito abaixo.
 
 ### Hospedagem e verificação
 
@@ -113,6 +126,50 @@ continuar passando. Essa cobertura não confirma integração com um banco real.
 Validações de escrita devem ocorrer em ambiente isolado; testes automatizados
 não devem apontar para o Supabase de produção. Não reaplique scripts SQL para
 testar o frontend. Qualquer operação de produção requer autorização específica.
+
+## Oportunidades reais
+
+`/oportunidades` consulta `GET /api/v1/fornecedores/me/oportunidades` usando a
+sessão profissional. A API lista pedidos abertos cuja categoria corresponde
+ao código ou ao nome de uma especialidade ativa cadastrada do fornecedor.
+Não há filtro de cidade ou raio. Pedidos já atribuídos, em andamento,
+concluídos ou cancelados ficam fora do feed.
+
+Busca, filtro por especialidade, ordenação por data/quantidade de propostas e
+paginação são aplicados no servidor. Todas as páginas podem ser consultadas.
+O botão Atualizar consulta novamente o banco. Carregamento, erro e ausência de
+pedidos têm estados distintos; não há fallback para pedidos de demonstração.
+Os números exibidos vêm da API. Estimativas financeiras e percentuais de IA
+fictícios foram removidos do painel.
+
+`/oportunidades/detalhes?id=<uuid>` consulta o detalhe real com a mesma regra de
+especialidade e disponibilidade. Fotos e informações do pedido vêm do banco;
+o layout segue a referência em duas colunas, sem o painel de compatibilidade
+por IA. O cartão do cliente exibe nome, data de cadastro e contadores reais de
+pedidos; a galeria permite ampliar as fotos. A ação de esclarecimento foi
+removida. Os botões Enviar Proposta abrem
+`/oportunidades/proposta?id=<uuid>` para preencher a proposta do pedido real.
+
+O formulário de proposta contém valores, prazo, início disponível, descrição,
+materiais, garantia obrigatória e até 5 fotos JPG/PNG de até 5 MB. A prévia usa
+a identidade profissional atual e simula o valor líquido com taxa ilustrativa
+de 10%, sem definir condições comerciais reais. Fotos têm prévia local e podem
+ser removidas; URLs temporárias são liberadas ao sair da tela. Não há dicas de
+IA, fotos fictícias nem dados de um prestador de demonstração.
+
+O envio real usa `POST /api/v1/fornecedores/me/oportunidades/{id}/propostas`,
+com JSON do formulário e arquivos em multipart. A API salva os campos na tabela
+de propostas e as fotos no Storage. O prestador é identificado pelo Bearer.
+A tela só mostra sucesso após uma resposta 201 confirmada. Cliques repetidos
+compartilham a mesma tentativa; em falha de resultado incerto, os campos ficam
+bloqueados e “Verificar envio” reutiliza o UUID para não duplicar a proposta.
+A simulação de taxa não altera o valor total salvo no banco.
+Um pedido indisponível retorna aviso, sem selecionar outro registro. Um 404
+nesse recurso preserva a sessão profissional. O envio de propostas não faz
+parte desta integração. As rotas existentes `/pedidos` continuam demonstrativas.
+
+As duas rotas usam a mesma configuração `VITE_API_BASE_URL` do cadastro/perfil.
+Não há novas chaves, migrações ou configurações do Supabase no frontend.
 
 ## Fluxo de pedidos
 
