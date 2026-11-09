@@ -46,7 +46,7 @@ export function createPasswordRecoveryClient({ apiUrl, fetchImpl, now = Date.now
     }
     if (newPassword !== confirmation) throw new ApiError('As senhas não coincidem.')
     try {
-      const result = await requestJson('/api/v1/auth/reset-password', {
+      const result = await requestJson('/api/v1/auth/change-password', {
         apiUrl, fetchImpl, method: 'POST', body: { newPassword }, accessToken: session.accessToken,
       })
       if (typeof result?.message !== 'string' || !result.message.trim()) {
@@ -59,7 +59,7 @@ export function createPasswordRecoveryClient({ apiUrl, fetchImpl, now = Date.now
         throw new ApiError(RECOVERY_LINK_ERROR, { status: error.status })
       }
       if (error.status === 400 || error.status === 422) {
-        throw new ApiError('A senha não foi aceita. Use de 8 a 128 caracteres e inclua letras maiúsculas, minúsculas, números e símbolos.', { status: error.status })
+        throw new ApiError('A nova senha não foi aceita. Use de 8 a 128 caracteres e siga as regras de segurança da sua conta.', { status: error.status })
       }
       throw error
     }

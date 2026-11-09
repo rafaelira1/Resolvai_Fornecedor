@@ -195,20 +195,26 @@ Validações: `npm run build`, `npm run lint` e `npm test`.
 
 A tela está disponível em `/#recuperar-senha`, `/login#recuperar-senha` e `/recuperar-senha`.
 
-Para habilitar o envio real, copie `.env.example` para `.env.local`, configure
-`VITE_PASSWORD_RECOVERY_URL` com o endpoint do serviço de autenticação e reinicie o Vite.
-O frontend envia `POST` com JSON `{ "email": "..." }`. O endpoint deve retornar
-um status 2xx (sem HTML) quando aceitar a solicitação, com a mesma resposta para
-e-mails cadastrados e não cadastrados, e 429 para excesso de solicitações.
-Se estiver em outra origem, o backend precisa permitir a origem do frontend via CORS.
-Essa variável é pública: não inclua chaves ou segredos.
+O fluxo do fornecedor usa link por e-mail:
 
-O backend deve gerar e validar tokens de uso único com expiração, enviar o e-mail
-e realizar a troca da senha. Esse serviço ainda não existe neste repositório.
-Sem o endpoint configurado, a tela exibe indisponibilidade e não simula envio.
-Não aponte essa variável para `/api/v1/auth/reset-password`, que exige uma sessão
-verificada e altera a senha do usuário autenticado. `/api/v1/auth/check-email`
-não envia e-mail e também não serve como endpoint de recuperação.
+1. A tela envia `POST /api/v1/auth/forgot-password` com `{email, redirectTo}`.
+   O campo `redirectTo` aponta para `/redefinir-senha` na origem do frontend.
+   A resposta não informa se a conta existe.
+2. Ao abrir o link, o frontend captura a sessão de recuperação, remove os tokens
+   da URL e mantém o acesso somente em memória.
+3. O usuário informa e confirma a nova senha. A tela envia
+   `POST /api/v1/auth/change-password` com `{newPassword}` e o Bearer da recuperação.
+4. Depois da confirmação do servidor, a tela descarta a sessão de recuperação e
+   oferece o retorno ao login. Links inválidos ou expirados exigem um novo link.
+
+A origem da API usa `VITE_API_BASE_URL`, com fallback para `VITE_API_URL`, como
+nas demais integrações. `VITE_PASSWORD_RECOVERY_URL` não é utilizada.
+Configure a origem do frontend em `CORS_ALLOWED_ORIGINS` no backend, autorize
+a URL de retorno no Supabase Auth e configure o e-mail com o link de recuperação.
+Entrega real e retorno pelo link precisam ser validados no ambiente de publicação.
+
+`/api/v1/auth/reset-password` fica reservado ao fluxo alternativo por código OTP,
+com `{email, token, newPassword}`. A interface do fornecedor utiliza o fluxo por link.
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
