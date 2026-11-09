@@ -46,12 +46,13 @@ test('validates confirmation and password limits before sending the token', asyn
   assert.equal(client.hasValidSession(), true)
 })
 
-test('resets only with the email token, preserves password characters and discards the token after success', async () => {
+test('changes the password with the recovery Bearer session and discards it after success', async () => {
   const calls = []
-  const client = createPasswordRecoveryClient({ now: () => now, fetchImpl: async (...args) => { calls.push(args); return json({ message: 'Senha redefinida.' }) } })
+  const client = createPasswordRecoveryClient({ now: () => now, fetchImpl: async (...args) => { calls.push(args); return json({ message: 'Senha alterada.' }) } })
   callback(client)
   await client.resetPassword(' NovaSenha123! ', ' NovaSenha123! ')
-  assert.equal(calls[0][0], '/api/v1/auth/reset-password')
+  assert.equal(calls[0][0], '/api/v1/auth/change-password')
+  assert.equal(calls[0][1].method, 'POST')
   assert.equal(calls[0][1].headers.Authorization, 'Bearer recovery-token')
   assert.deepEqual(JSON.parse(calls[0][1].body), { newPassword: ' NovaSenha123! ' })
   assert.equal(client.hasValidSession(), false)
@@ -73,6 +74,18 @@ test('server rejection invalidates the recovery session while policy and rate er
     callback(client)
     await assert.rejects(client.resetPassword('NovaSenha123!', 'NovaSenha123!'))
     assert.equal(client.hasValidSession(), ![401, 403].includes(status))
+  }
+})
+
+test('password policy errors give account-specific guidance and allow another attempt', async () => {
+  for (const status of [400, 422]) {
+    const client = createPasswordRecoveryClient({ now: () => now, fetchImpl: async () => json({}, status) })
+    callback(client)
+    await assert.rejects(client.resetPassword('NovaSenha123!', 'NovaSenha123!'), {
+      status,
+      message: 'A nova senha não foi aceita. Use de 8 a 128 caracteres e siga as regras de segurança da sua conta.',
+    })
+    assert.equal(client.hasValidSession(), true)
   }
 })
 
