@@ -1,5 +1,6 @@
 import { ApiError } from './api.js'
 import { authSession } from './session.js'
+import { providerDataCache } from './providerDataCache.js'
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const failure = 'Não foi possível confirmar o envio. Tente novamente com os mesmos dados; isso não duplicará a proposta.'
@@ -40,5 +41,6 @@ export async function sendProposal(orderId, data, files, { auth = authSession } 
     || !result.portfolio.every(photo => typeof photo.url === 'string' && /^https?:\/\//.test(photo.url))) {
     throw new ApiError(failure, { uncertain: true })
   }
+  providerDataCache.clear()
   return result
 }

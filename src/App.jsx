@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react'
+import { useEffect, useSyncExternalStore } from 'react'
 import './App.css'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
@@ -13,6 +13,7 @@ import PasswordResetPage from './pages/PasswordResetPage'
 import OrdersPage from './pages/OrdersPage'
 import ServiceOrderPage from './pages/ServiceOrderPage'
 import ProviderGuard from './components/ProviderGuard'
+import { getCurrentLocation, getScreenPath, handleInternalLink } from './services/navigation'
 
 const publicPaths = new Set(['/', '/login', '/recuperar-senha', '/redefinir-senha', '/cadastro', '/criar-conta', '/termos', '/termos-de-uso', '/privacidade', '/politica-de-privacidade'])
 
@@ -46,19 +47,17 @@ function subscribeToLocation(onChange) {
   }
 }
 
-function getCurrentPath() {
-  const path = window.location.pathname.replace(/\/$/, '') || '/'
-  if ((path === '/' || path === '/login') && window.location.hash === '#recuperar-senha') {
-    return '/recuperar-senha'
-  }
-  return path
-}
-
 function App() {
-  const currentPath = useSyncExternalStore(subscribeToLocation, getCurrentPath)
+  const location = useSyncExternalStore(subscribeToLocation, getCurrentLocation)
+  const currentPath = getScreenPath(location)
   const Screen = screens[currentPath] ?? LoginPage
+  useEffect(() => {
+    const onClick = event => handleInternalLink(event, path => Object.hasOwn(screens, path))
+    document.addEventListener('click', onClick)
+    return () => document.removeEventListener('click', onClick)
+  }, [])
 
-  return publicPaths.has(currentPath) || !screens[currentPath] ? <Screen /> : <ProviderGuard><Screen /></ProviderGuard>
+  return publicPaths.has(currentPath) || !screens[currentPath] ? <Screen key={location} /> : <ProviderGuard><Screen key={location} /></ProviderGuard>
 }
 
 export default App

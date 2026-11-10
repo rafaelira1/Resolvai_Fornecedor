@@ -267,3 +267,8 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+.home-request-message { padding: 20px 24px; color: #687386; }
+.home-request-message[role='alert'] { color: #a12b1b; }
+.home-request-message p { margin-bottom: 12px; }
+.home-order-status.accepted { color: #9b5700; background: #fff3dc; }

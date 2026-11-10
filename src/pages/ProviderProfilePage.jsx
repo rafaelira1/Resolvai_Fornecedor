@@ -2,6 +2,8 @@
 import ProviderSidebar from '../components/ProviderSidebar'
 import { useProviderSession } from '../hooks/useProviderSession'
 import { getServiceCategories } from '../services/serviceCategories'
+import { useProviderData } from '../hooks/useProviderData'
+import { providerCacheKeys } from '../services/providerCacheData'
 import { getProfileSpecialtyOptions, toggleProfileSpecialty, updateProviderProfile, validateProviderProfile } from '../services/fornecedores'
 import { BRAZILIAN_STATES, formatDocument } from '../services/registrationValidation'
 import './ProviderProfilePage.css'
@@ -18,26 +20,18 @@ function ProviderProfilePage() {
   const session = useProviderSession()
   const profile = session.profile
   const [draft, setDraft] = useState(() => editable(profile))
-  const [categories, setCategories] = useState([])
+  const catalog = useProviderData(getServiceCategories, { cacheKey: providerCacheKeys.categories })
+  const categories = catalog.data ?? []
   const [isEditing, setIsEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
-  const [categoriesLoading, setCategoriesLoading] = useState(true)
-  const [categoryLoadError, setCategoryLoadError] = useState('')
-  const [categoryReload, setCategoryReload] = useState(0)
+  const categoriesLoading = catalog.loading
+  const categoryLoadError = catalog.error?.message ?? ''
 
   useEffect(() => {
     document.title = 'Meu perfil | ResolvAI Fornecedor'
-    const controller = new AbortController()
-    getServiceCategories({ signal: controller.signal })
-      .then((items) => { if (!controller.signal.aborted) setCategories(items) })
-      .catch((failure) => {
-        if (!controller.signal.aborted) setCategoryLoadError(failure.message || 'Não foi possível carregar as especialidades.')
-      })
-      .finally(() => { if (!controller.signal.aborted) setCategoriesLoading(false) })
-    return () => controller.abort()
-  }, [categoryReload])
+  }, [])
 
   const catalogUnavailable = categoriesLoading || Boolean(categoryLoadError) || categories.length === 0
   const values = isEditing ? draft : editable(profile)
@@ -45,9 +39,7 @@ function ProviderProfilePage() {
   const initials = profile.nomeExibicao.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase()
 
   function retryCategories() {
-    setCategoriesLoading(true)
-    setCategoryLoadError('')
-    setCategoryReload((value) => value + 1)
+    catalog.reload()
   }
   function startEditing() {
     setDraft(editable(profile))

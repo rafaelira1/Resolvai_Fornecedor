@@ -1,39 +1,25 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import ProviderSidebar from '../components/ProviderSidebar'
-import { useProviderSession } from '../hooks/useProviderSession'
+import { useProviderData } from '../hooks/useProviderData'
+import { providerCacheKeys } from '../services/providerCacheData'
+import { prefetchOpportunity } from '../services/opportunityPrefetch'
 import { formatOpportunityDate, getOpportunities, getUrgency } from '../services/opportunities'
 import './OpportunitiesPage.css'
 
 function OpportunitiesPage() {
-  const session = useProviderSession()
-  const sessionId = session?.sessionId
-  const specialtiesKey = session?.profile?.especialidades.join(',') ?? ''
   const [filters, setFilters] = useState({ search: '', category: '', sort: 'recent', page: 1 })
   const [search, setSearch] = useState('')
-  const [reload, setReload] = useState(0)
-  const [state, setState] = useState(null)
-  const requestKey = JSON.stringify([sessionId, specialtiesKey, filters, reload])
-  const current = state?.key === requestKey ? state : null
-  const loading = !current
-  const data = current?.data
-  const error = current?.error
-  const specialties = data?.specialties ?? state?.data?.specialties ?? []
+  const load = useCallback(options => getOpportunities({ ...filters, ...options }), [filters])
+  const { data, error, loading, reload, previousData, refreshing } = useProviderData(load, { cacheKey: providerCacheKeys.opportunities(filters) })
+  const specialties = data?.specialties ?? previousData?.specialties ?? []
   const total = data?.totalItems ?? 0
 
   useEffect(() => {
     document.title = 'Oportunidades | ResolvAI Fornecedor'
   }, [])
 
-  useEffect(() => {
-    const controller = new AbortController()
-    getOpportunities({ ...filters, signal: controller.signal })
-      .then(result => { if (!controller.signal.aborted) setState({ key: requestKey, data: result }) })
-      .catch(requestError => { if (!controller.signal.aborted) setState({ key: requestKey, error: requestError.message }) })
-    return () => controller.abort()
-  }, [filters, requestKey])
-
   function updateFilter(field, value) {
-    setFilters(previous => ({ ...previous, [field]: value, page: 1 }))
+    setFilters(previous => previous[field] === value && previous.page === 1 ? previous : ({ ...previous, [field]: value, page: 1 }))
   }
 
   function submitSearch(event) {
@@ -90,11 +76,12 @@ function OpportunitiesPage() {
                 <option value="proposals">Ordenar: Menos propostas</option>
               </select>
             </label>
-            <button className="opportunities-control" type="button" disabled={loading} onClick={() => setReload(value => value + 1)}>Atualizar</button>
+            <button className="opportunities-control" type="button" disabled={loading} onClick={reload}>Atualizar</button>
           </div>
 
           {loading && <div className="opportunities-empty" role="status">Carregando oportunidades…</div>}
-          {error && <div className="opportunities-empty opportunities-error" role="alert"><strong>{error}</strong><button className="opportunities-control" type="button" onClick={() => setReload(value => value + 1)}>Tentar novamente</button></div>}
+          {!loading && refreshing && <p role="status">Atualizando oportunidades…</p>}
+          {error && <div className="opportunities-empty opportunities-error" role="alert"><strong>{error.message}</strong><button className="opportunities-control" type="button" onClick={reload}>Tentar novamente</button></div>}
           {data && data.items.length > 0 && <div className="opportunities-table-scroll">
             <div className="opportunities-table" role="table" aria-label="Todos os pedidos">
               <div className="opportunities-row opportunities-table-head" role="row">
@@ -116,13 +103,13 @@ function OpportunitiesPage() {
                   <span role="cell">{opportunity.location || 'Não informada'}</span>
                   <div role="cell"><span className={`opportunities-proposals ${opportunity.proposalsCount === 0 ? 'empty' : ''}`}>{opportunity.proposalsCount} {opportunity.proposalsCount === 1 ? 'enviada' : 'enviadas'}</span></div>
                   <div role="cell"><span className={`opportunities-urgency urgency-${getUrgency(opportunity.urgency).tone}`}>{getUrgency(opportunity.urgency).label}</span></div>
-                  <div role="cell"><a className="opportunities-view-button primary" href={`/oportunidades/detalhes?id=${opportunity.id}`}>Ver Pedido</a></div>
+                  <div role="cell"><a className="opportunities-view-button primary" href={`/oportunidades/detalhes?id=${opportunity.id}`} onMouseEnter={() => prefetchOpportunity(opportunity.id)} onFocus={() => prefetchOpportunity(opportunity.id)} onPointerDown={() => prefetchOpportunity(opportunity.id)}>Ver Pedido</a></div>
                 </div>
               ))}
             </div>
           </div>}
 
-          {data && data.items.length === 0 && (
+          {data && !error && data.items.length === 0 && (
             <div className="opportunities-empty" role="status">
               <strong>Nenhuma oportunidade encontrada</strong>
               <span>{specialties.length === 0 ? 'Adicione especialidades ativas ao seu perfil para receber oportunidades.' : filters.search || filters.category ? 'Tente buscar outro termo ou alterar os filtros.' : 'Ainda não há pedidos abertos nas suas especialidades. Atualize para consultar novamente.'}</span>
