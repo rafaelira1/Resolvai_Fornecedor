@@ -17,7 +17,7 @@ let RegisterPage
 
 before(async () => {
   server = await createServer({ server: { middlewareMode: true, ws: false }, appType: 'custom', optimizeDeps: { noDiscovery: true, include: [] } })
-  RegisterPage = (await server.ssrLoadModule('/src/pages/RegisterPage.jsx')).default
+  RegisterPage = (await server.ssrLoadModule('/src/pages/Cadastro/index.jsx')).default
 })
 after(async () => { await server?.close() })
 

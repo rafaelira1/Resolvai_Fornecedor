@@ -43,7 +43,7 @@ async function application(t, initialPath = '/ativar-fornecedor') {
     globalThis.IS_REACT_ACT_ENVIRONMENT = previous.act
   })
   const { default: Guard } = await server.ssrLoadModule('/src/components/ProviderGuard.jsx')
-  const { default: Register } = await server.ssrLoadModule('/src/pages/RegisterPage.jsx')
+  const { default: Register } = await server.ssrLoadModule('/src/pages/Cadastro/index.jsx')
   await act(async () => { renderer = create(React.createElement(Guard, null, React.createElement(Register, { activation: true }))) })
   const field = name => renderer.root.findAll(n => ['input', 'select', 'textarea'].includes(n.type) && n.props.name === name)[0]
   const change = async (name, value) => act(async () => field(name).props.onChange({ target: { name, value } }))

@@ -48,7 +48,7 @@ test('actual guard keeps the edited profile mounted through expiry and renewal, 
   })
   t.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: instant })
   const { default: Guard } = await server.ssrLoadModule('/src/components/ProviderGuard.jsx')
-  const { default: Profile } = await server.ssrLoadModule('/src/pages/ProviderProfilePage.jsx')
+  const { default: Profile } = await server.ssrLoadModule('/src/pages/ProviderProfile/index.jsx')
   await act(async () => { renderer = create(React.createElement(Guard, null, React.createElement(Profile))) })
   const input = () => renderer.root.findAllByType('input').find((node) => node.props.name === 'nomeExibicao')
   const edit = renderer.root.findAllByType('button').find((node) => node.children.includes('Editar perfil'))
@@ -112,7 +112,7 @@ test('initial and replaced identities stay gated until their own profile verifie
   })
   t.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: instant })
   const { default: Guard } = await server.ssrLoadModule('/src/components/ProviderGuard.jsx')
-  const { default: Profile } = await server.ssrLoadModule('/src/pages/ProviderProfilePage.jsx')
+  const { default: Profile } = await server.ssrLoadModule('/src/pages/ProviderProfile/index.jsx')
   await act(async () => { renderer = create(React.createElement(Guard, null, React.createElement(Profile))) })
   assert.equal(renderer.root.findAllByType(Profile).length, 0)
   const newId = '22222222-2222-4222-8222-222222222222'

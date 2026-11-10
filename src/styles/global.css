@@ -1,0 +1,125 @@
+@import './variables.css';
+
+/* Local fonts match Cliente's pinned Fontsource packages; see public/fonts. */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/inter-latin-400-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/inter-latin-500-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/inter-latin-600-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/inter-latin-700-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Rajdhani';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/rajdhani-latin-600-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Rajdhani';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/rajdhani-latin-700-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Alexandria';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/alexandria-latin-400-normal.woff2') format('woff2');
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { min-width: 320px; scroll-behavior: smooth; }
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  font-family: var(--font-secondary);
+  background: var(--color-background);
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-body);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+#root { min-height: 100vh; }
+h1, h2, h3, h4 { font-family: var(--font-main); text-wrap: balance; }
+p { line-height: var(--line-height-readable); }
+button, input, select, textarea { font: inherit; }
+button {
+  cursor: pointer;
+  border: none;
+  color: inherit;
+  background: none;
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+a { color: inherit; text-decoration: none; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+:focus-visible { outline: 3px solid #ff4f1f; outline-offset: 4px; }
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offset: 1px; }
+svg { flex-shrink: 0; vertical-align: middle; }
+::selection { background: #ff4f1f33; color: var(--color-text); }
+
+.brand-wordmark, .brand-lockup, .brand-symbol {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  line-height: 0;
+}
+.brand-wordmark > svg, .brand-lockup > svg, .brand-symbol > svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.brand-wordmark { width: 200px; }
+.brand-lockup { width: 265px; }
+.brand-symbol { width: 40px; }
+.brand-lockup text { font-family: var(--font-brand); font-weight: var(--font-weight-regular); }
+.brand-mark { display: inline-grid; place-items: center; }
+.brand-mark .brand-symbol { width: 100%; height: 100%; }
+.provider-wordmark { width: min(100%, 280px); margin-inline: auto; }
+.provider-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  color: var(--color-muted);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-compact);
+  letter-spacing: 1px;
+  margin-top: var(--space-3);
+}
+.provider-badge svg { width: 15px; height: 15px; fill: currentColor; }
+.brand-content, .mobile-brand { text-align: center; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}

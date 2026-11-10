@@ -36,7 +36,7 @@ async function renderPage(t, screen, fetcher) {
   })
   const { authSession } = await server.ssrLoadModule('/src/services/session.js')
   authSession.setProfile({ idUsuario: userId, name: 'Teste', email: 'test@example.invalid', nomeExibicao: 'Fornecedor real', especialidades: ['eletrica'], cidadeAtuacao: 'Fortaleza', ufAtuacao: 'CE' })
-  const { default: Page } = await server.ssrLoadModule(`/src/pages/${screen}.jsx`)
+  const { default: Page } = await server.ssrLoadModule(`/src/pages/${screen === 'HomePage' ? 'Dashboard' : screen.replace(/Page$/, '')}/index.jsx`)
   await act(async () => { renderer = create(React.createElement(Page)) })
   return { renderer, auth: authSession, events, text: () => JSON.stringify(renderer.toJSON()), click: async label => {
     const button = renderer.root.findAllByType('button').find(node => node.children.includes(label))

@@ -1,9 +1,9 @@
-import isotipo from '../assets/branding/isotipo-resolvai.png'
+import { BrandSymbol } from './BrandLogo'
 
 function BrandMark() {
   return (
     <span className="brand-mark" aria-hidden="true">
-      <img src={isotipo} alt="" />
+      <BrandSymbol />
     </span>
   )
 }

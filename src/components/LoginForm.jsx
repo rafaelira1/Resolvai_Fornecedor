@@ -24,14 +24,14 @@ function LoginForm() {
   }
 
   return (
-    <div className="login-card">
+    <div className="auth-form-content">
       <header className="form-heading">
         <p className="eyebrow">Bem-vindo de volta</p>
         <h1 id="login-title">Acesse sua conta</h1>
         <p>Use sua conta do Cliente ou do Fornecedor para entrar.</p>
       </header>
 
-      <form onSubmit={handleSubmit} aria-busy={loading}>
+      <form className="login-form" onSubmit={handleSubmit} aria-busy={loading}>
         {error && <p className="auth-error" role="alert">{error}</p>}
         <div className="field-group">
           <label htmlFor="email">E-mail</label>
