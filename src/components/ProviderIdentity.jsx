@@ -1,13 +1,13 @@
-import { BrandWordmark } from './BrandLogo'
+import { BrandLockup } from './BrandLogo'
 import { WrenchIcon } from './Icons'
 
-function ProviderIdentity({ mobile = false }) {
+function ProviderIdentity({ mobile = false, tone = 'dark' }) {
   return (
     <div
       className={mobile ? 'mobile-brand' : 'brand-content'}
       aria-label="ResolvAI, área do fornecedor"
     >
-      <BrandWordmark className="provider-wordmark" />
+      <BrandLockup className="provider-wordmark" tone={tone} />
 
       <div className="provider-badge">
         <WrenchIcon />

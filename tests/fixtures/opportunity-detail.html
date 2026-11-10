@@ -7,7 +7,7 @@
       // Isolated visual fixture: no real login or database requests.
       import React from 'react'
       import { createRoot } from 'react-dom/client'
-      import '/src/index.css'
+      import '/src/styles/global.css'
       const id = '20000000-0000-4000-8000-000000000001'
       const user = { id: '10000000-0000-4000-8000-000000000001', name: 'Fornecedor de teste', email: 'teste@example.invalid', role: 'Prestador', isActive: true }
       sessionStorage.setItem('resolvai:provider-session:v1', JSON.stringify({ accessToken: 'synthetic-visual-token', tokenType: 'bearer', expiresAtUtc: '2099-01-01T00:00:00Z', sessionId: 'visual-test', user }))
@@ -27,10 +27,11 @@
         return Response.json(detail)
       }
       const proposalScreen = new URLSearchParams(location.search).get('screen') === 'proposal'
-      const { default: Page } = proposalScreen ? await import('/src/pages/SendProposalPage.jsx') : await import('/src/pages/OpportunityDetailsPage.jsx')
+      const { default: Page } = proposalScreen ? await import('/src/pages/SendProposal/index.jsx') : await import('/src/pages/OpportunityDetails/index.jsx')
       const { authSession } = await import('/src/services/session.js')
       authSession.setProfile({ idUsuario: user.id, name: user.name, email: user.email, nomeExibicao: 'Fornecedor de teste', especialidades: ['hidraulica'], cidadeAtuacao: 'Fortaleza', ufAtuacao: 'CE' })
-      createRoot(document.getElementById('root')).render(React.createElement(Page))
+      const { default: ProviderLayout } = await import('/src/components/layout/ProviderLayout.jsx')
+      createRoot(document.getElementById('root')).render(React.createElement(ProviderLayout, { currentPath: proposalScreen ? '/oportunidades/proposta' : '/oportunidades/detalhes' }, React.createElement(Page)))
       const observer = new MutationObserver(() => {
         if (!document.querySelector(proposalScreen ? '.send-proposal-layout' : '#order-title')) return
         observer.disconnect()

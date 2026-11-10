@@ -1,5 +1,13 @@
 # resolvAI
 
+## Estrutura visual e de código
+
+O Fornecedor segue a estrutura de layout e tipografia do Cliente, preservando sua paleta laranja/navy.
+Rotas ficam em `src/routes`, páginas em `src/pages/<Nome>/index.jsx`, layouts compartilhados em
+`src/components/layout` e estilos em `src/styles`. Fontes WOFF2 e marca SVG são locais em `public/fonts` e `public/brand`.
+Tamanhos de fonte, sidebar, espaçamentos e bordas são compartilhados em `src/styles/variables.css`.
+Detalhes, exemplos de variáveis, referência e roteiro de conferência manual: [guia visual](docs/STYLE_GUIDE.md).
+
 ## Executar o frontend
 
 O projeto React + Vite fica diretamente na raiz de `Resolvai_Fornecedor`.

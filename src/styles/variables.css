@@ -1,0 +1,239 @@
+:root {
+  /* Cores do Fornecedor. */
+  --color-primary: #ff4f1f;
+  --color-primary-hover: #e83b0e;
+  --color-primary-text: #b43e1f;
+  --color-primary-soft: #fff0e8;
+  --color-secondary: #ff4f1f;
+  --color-secondary-soft: #fff0e8;
+  --color-background: #f8f5f2;
+  --color-surface: #ffffff;
+  --color-text: #162034;
+  --color-muted: #5f6b7b;
+  --color-border: #e1e5eb;
+  --color-success: #0db881;
+  --color-success-soft: #eafbf4;
+  --color-warning: #f39b0a;
+  --color-warning-soft: #fff8e4;
+  --color-danger: #ef484f;
+  --color-danger-soft: #fff0ec;
+  --color-sidebar: #102136;
+  --color-sidebar-text: #c4ccd7;
+  --color-sidebar-muted: #8594a8;
+  --color-sidebar-hover: #1c3049;
+  --color-sidebar-divider: #ffffff10;
+  --color-on-primary: var(--color-text);
+
+  /* Tipografia compartilhada: altere o papel desejado para atualizar todas as telas. */
+  --font-main: 'Rajdhani', ui-sans-serif, system-ui, sans-serif;
+  --font-secondary: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-brand: 'Alexandria', ui-sans-serif, system-ui, sans-serif;
+  --font-size-micro: 10px;
+  --font-size-note: 11px;
+  --font-size-caption: 12px;
+  --font-size-small: 13px;
+  --font-size-ui: 14px;
+  --font-size-description: 15px;
+  --font-size-body: 16px;
+  --font-size-emphasis: 18px;
+  --font-size-section-title: 20px;
+  --font-size-subtitle: 24px;
+  --font-size-auth-title: 30px;
+  --font-size-display: 40px;
+  --font-size-legal-title: clamp(40px, 5vw, 64px);
+  --font-size-page-title-desktop: 35px;
+  --font-size-page-title-mobile: 32px;
+  --font-size-page-title: var(--font-size-page-title-desktop);
+  --font-size-page-description: var(--font-size-description);
+  --font-size-hero-title-desktop: 34px;
+  --font-size-hero-title-wide: 39px;
+  --font-size-hero-title-medium: 31px;
+  --font-size-hero-title-compact: 29px;
+  --font-size-hero-title-mobile: 31px;
+  --font-size-hero-title-small: 30px;
+  --font-size-hero-title: var(--font-size-hero-title-desktop);
+  --font-size-stat-value-desktop: 37px;
+  --font-size-stat-value-mobile: 35px;
+  --font-size-stat-value-small: 32px;
+  --font-size-stat-value: var(--font-size-stat-value-desktop);
+  --font-size-stat-label: var(--font-size-ui);
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --line-height-title: 1.2;
+  --line-height-hero: 1.08;
+  --line-height-compact: 1.4;
+  --line-height-body: 1.5;
+  --line-height-readable: 1.65;
+
+  /* Escala de espaçamentos, bordas e controles. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-9: 36px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-14: 56px;
+  --space-16: 64px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+  --shadow-card: 0 4px 24px #10213603;
+  --control-height: 44px;
+  --input-height: 48px;
+
+  /* Sidebar: a largura ativa também determina o início do conteúdo. */
+  --sidebar-width-desktop: 248px;
+  --sidebar-width-medium: 224px;
+  --sidebar-width-compact: 210px;
+  --sidebar-width-mobile: 250px;
+  --sidebar-width: var(--sidebar-width-desktop);
+  --sidebar-padding-top: var(--space-6);
+  --sidebar-padding-inline: 14px;
+  --sidebar-padding-bottom: 10px;
+  --sidebar-brand-padding-inline: var(--space-1);
+  --sidebar-brand-gap: var(--space-6);
+  --sidebar-brand-max-width: 220px;
+  --sidebar-nav-padding: var(--space-1);
+  --sidebar-item-height: 42px;
+  --sidebar-item-padding-block: 10px;
+  --sidebar-item-padding-inline: 10px;
+  --sidebar-item-gap: 10px;
+  --sidebar-item-margin: 3px;
+  --sidebar-icon-size: 19px;
+  --sidebar-label-tracking: 1.6px;
+  --sidebar-label-padding-inline: 14px;
+  --sidebar-group-gap: var(--space-5);
+  --sidebar-action-margin: 10px;
+  --sidebar-action-padding-block: var(--space-3);
+  --sidebar-action-padding-inline: 14px;
+  --sidebar-account-padding-block: 15px;
+  --sidebar-account-padding-inline: 22px;
+  --sidebar-avatar-size: 39px;
+  --sidebar-avatar-font-size: var(--font-size-description);
+
+  /* Layout e dashboard, com as medidas da referência Cliente. */
+  --header-height: 77px;
+  --header-padding-block: var(--space-4);
+  --header-padding-inline: var(--content-padding-inline);
+  --header-gap: var(--space-5);
+  --header-avatar-size: 34px;
+  --content-max-width: 1556px;
+  --content-padding-inline: 38px;
+  --content-padding-top: 30px;
+  --content-padding-bottom: var(--space-12);
+  --content-section-gap: var(--space-6);
+  --page-heading-gap: 25px;
+  --hero-min-height: 270px;
+  --hero-padding-block: 29px;
+  --hero-padding-inline: 37px;
+  --stat-grid-gap: 17px;
+  --stat-card-padding-block: 18px;
+  --stat-card-padding-inline: var(--space-5);
+
+  /* Aliases mantidos para os estilos existentes. */
+  --font-size-sm: var(--font-size-ui);
+  --font-size-md: var(--font-size-body);
+  --font-size-lg: var(--font-size-subtitle);
+  --spacing-xs: var(--space-1);
+  --spacing-sm: var(--space-2);
+  --spacing-md: var(--space-4);
+  --spacing-lg: var(--space-8);
+  --navy-950: #091626;
+  --navy-900: var(--color-sidebar);
+  --orange: var(--color-primary);
+  --orange-dark: var(--color-primary-hover);
+  --paper: #fffdfa;
+  --ink: var(--color-text);
+  --muted: var(--color-muted);
+}
+
+/* As variantes responsivas também são centralizadas aqui. */
+@media (min-width: 1600px) {
+  :root {
+    --content-padding-top: 38px;
+    --font-size-hero-title: var(--font-size-hero-title-wide);
+    --hero-min-height: 290px;
+    --stat-card-padding-block: var(--space-5);
+    --stat-card-padding-inline: var(--space-6);
+  }
+}
+@media (max-width: 1250px) {
+  :root {
+    --sidebar-width: var(--sidebar-width-medium);
+    --sidebar-brand-padding-inline: 9px;
+    --content-padding-inline: 26px;
+    --font-size-hero-title: var(--font-size-hero-title-medium);
+    --font-size-stat-label: var(--font-size-small);
+    --hero-padding-inline: var(--space-7);
+    --stat-card-padding-block: 15px;
+    --stat-card-padding-inline: 15px;
+  }
+}
+@media (max-width: 1050px) {
+  :root {
+    --sidebar-width: var(--sidebar-width-compact);
+    --sidebar-padding-inline: var(--space-3);
+    --sidebar-brand-padding-inline: 7px;
+    --sidebar-account-padding-inline: 18px;
+    --sidebar-item-gap: 9px;
+    --content-padding-inline: 22px;
+    --font-size-hero-title: var(--font-size-hero-title-compact);
+    --stat-grid-gap: var(--space-3);
+  }
+}
+@media (max-width: 760px) {
+  :root {
+    --sidebar-width: var(--sidebar-width-mobile);
+    --header-height: 68px;
+    --header-padding-block: var(--space-3);
+    --header-padding-inline: 18px;
+    --header-gap: 10px;
+    --content-padding-inline: var(--space-5);
+    --content-padding-top: 23px;
+    --content-padding-bottom: var(--space-8);
+    --page-heading-gap: var(--space-5);
+    --font-size-page-title: var(--font-size-page-title-mobile);
+    --font-size-page-description: var(--font-size-ui);
+    --font-size-hero-title: var(--font-size-hero-title-mobile);
+    --font-size-stat-value: var(--font-size-stat-value-mobile);
+    --font-size-stat-label: var(--font-size-ui);
+    --hero-min-height: 258px;
+    --stat-card-padding-block: 17px;
+    --stat-card-padding-inline: 17px;
+  }
+}
+@media (max-width: 560px) {
+  :root {
+    --header-padding-block: 10px;
+    --header-padding-inline: 14px;
+    --content-padding-inline: var(--space-4);
+    --content-padding-top: 22px;
+    --font-size-hero-title: var(--font-size-hero-title-small);
+    --font-size-stat-value: var(--font-size-stat-value-small);
+    --font-size-stat-label: var(--font-size-caption);
+    --stat-grid-gap: 10px;
+    --stat-card-padding-block: 13px;
+    --stat-card-padding-inline: var(--space-3);
+  }
+}
+@media (max-height: 700px) {
+  :root {
+    --sidebar-padding-top: var(--space-4);
+    --sidebar-brand-gap: var(--space-2);
+    --sidebar-item-height: 38px;
+    --sidebar-item-padding-block: var(--space-2);
+    --sidebar-item-margin: 2px;
+    --sidebar-group-gap: 14px;
+    --sidebar-action-margin: 6px;
+    --sidebar-action-padding-block: var(--space-2);
+    --sidebar-account-padding-block: var(--space-3);
+  }
+}
