@@ -1,4 +1,4 @@
-﻿export function createLoginFlow({ auth, loadProfile, onState, onSuccess }) {
+export function createLoginFlow({ auth, loadProfile, onState, onSuccess }) {
   let operation = null
   function cancel() {
     const abandoned = operation
@@ -12,13 +12,18 @@
     const isCurrent = () => operation === controller && !controller.signal.aborted
     onState({ loading: true, error: '' })
     try {
-      await auth.login({ ...credentials, signal: controller.signal })
+      const session = await auth.login({ ...credentials, signal: controller.signal })
       if (!isCurrent()) return
+      if (session?.providerProfileStatus === 'pending') {
+        operation = null
+        onSuccess('/ativar-fornecedor')
+        return
+      }
       await loadProfile({ auth, signal: controller.signal })
       if (!isCurrent()) return
       // A successful navigation unmounts the form; the completed session remains.
       operation = null
-      onSuccess()
+      onSuccess('/home')
     } catch (failure) {
       if (!isCurrent()) return
       operation = null

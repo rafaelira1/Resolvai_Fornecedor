@@ -88,7 +88,7 @@ function checkOptionalText(errors, field, value, label, maximum) {
   }
 }
 
-export function validateRegistration(values, { step, availableSpecialties } = {}) {
+export function validateRegistration(values, { step, availableSpecialties, activation = false } = {}) {
   const data = values && typeof values === 'object' ? values : {}
   const errors = {}
 
@@ -154,18 +154,22 @@ export function validateRegistration(values, { step, availableSpecialties } = {}
     errors.especialidades = 'Há especialidades indisponíveis. Atualize a lista e revise sua seleção.'
   }
 
+  if (activation) {
+    delete errors.email
+    delete errors.password
+    delete errors.passwordConfirmation
+  }
   const fields = step === 0 ? BASIC_FIELDS : step === 1 ? PROFESSIONAL_FIELDS : null
   return fields ? Object.fromEntries(Object.entries(errors).filter(([field]) => fields.includes(field))) : errors
 }
 
-export function createRegistrationPayload(values) {
-  const errors = validateRegistration(values)
+export function createRegistrationPayload(values, { activation = false } = {}) {
+  const errors = validateRegistration(values, { activation })
   if (Object.keys(errors).length > 0) throw new Error(Object.values(errors)[0])
 
   return {
     name: values.name.trim(),
-    email: values.email.trim().toLowerCase(),
-    password: values.password,
+    ...(!activation ? { email: values.email.trim().toLowerCase(), password: values.password } : {}),
     tipoPessoa: values.tipoPessoa,
     nomeExibicao: values.nomeExibicao.trim(),
     cpf: values.tipoPessoa === 'PF' ? normalizeCpf(values.cpf) : null,

@@ -27,6 +27,7 @@ const screens = {
   '/redefinir-senha': PasswordResetPage,
   '/cadastro': RegisterPage,
   '/criar-conta': RegisterPage,
+  '/ativar-fornecedor': () => <RegisterPage activation />,
   '/perfil': ProviderProfilePage,
   '/meu-perfil': ProviderProfilePage,
   '/oportunidades': OpportunitiesPage,

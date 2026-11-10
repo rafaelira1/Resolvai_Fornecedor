@@ -28,7 +28,7 @@ test('actual guard keeps the edited profile mounted through expiry and renewal, 
   globalThis.document = { title: '' }
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
   globalThis.fetch = async (url, options) => {
-    if (url.endsWith('/auth/refresh')) {
+    if (url.endsWith('/auth/refresh-provider')) {
       refreshes++
       return new Promise((resolve) => { releaseRefresh = () => resolve(json(200, token({ accessToken: 'renewed', expiresAtUtc: new Date(Date.now() + 9000).toISOString() }))) })
     }

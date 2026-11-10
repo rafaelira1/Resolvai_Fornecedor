@@ -12,7 +12,7 @@ function LoginForm() {
     auth: authSession,
     loadProfile: getProviderProfile,
     onState: (state) => { setLoading(state.loading); setError(state.error) },
-    onSuccess: () => window.location.assign('/home'),
+    onSuccess: (destination) => window.location.assign(destination),
   }))
   useEffect(() => () => flow.cancel(), [flow])
 
@@ -28,7 +28,7 @@ function LoginForm() {
       <header className="form-heading">
         <p className="eyebrow">Bem-vindo de volta</p>
         <h1 id="login-title">Acesse sua conta</h1>
-        <p>Entre com seus dados para gerenciar seus serviços.</p>
+        <p>Use sua conta do Cliente ou do Fornecedor para entrar.</p>
       </header>
 
       <form onSubmit={handleSubmit} aria-busy={loading}>
