@@ -16,6 +16,34 @@ no lugar de `npm`.
 Para gerar a versao de producao, execute `npm run build`.
 Para verificar o codigo, execute `npm run lint`.
 
+## Ativar Fornecedor com uma conta do Cliente
+
+Use o mesmo e-mail e senha do Cliente no login do Fornecedor. Uma conta sem perfil
+profissional recebe `providerProfileStatus: pending` e segue para
+`/ativar-fornecedor`, com o formulário "Ativar perfil de fornecedor".
+Nome, e-mail e CPF existentes são reaproveitados; e-mail, senha, UUID e papel
+não são enviados na ativação. O nome pessoal do Cliente é preservado.
+Preencha telefone, identificação PF/PJ, nome profissional, cidade/UF e especialidades;
+revise e confirme. CPF existente não pode ser substituído; PJ preserva o CPF
+pessoal e acrescenta o CNPJ do perfil profissional.
+
+O formulário reutiliza as etapas e validações do cadastro. Ele chama
+`POST /api/v1/fornecedores/me/complete-registration` com o Bearer da conta
+existente. Após confirmar o perfil, atualiza a sessão para status `active`
+e abre o painel. Uma resposta perdida pode ser conferida por uma leitura do próprio
+perfil, sem repetir automaticamente a gravação. Os campos permanecem no formulário
+em caso de falha. Senhas não são solicitadas nem armazenadas nesse fluxo.
+
+A conta permanece com o mesmo ID e papel original; o backend valida a capacidade
+profissional a cada requisição usando o perfil no banco. O status salvo no navegador
+não concede permissões por si só. Pedidos próprios não recebem propostas da mesma conta.
+
+Antes de testar, execute a nova versão do backend, reinicie o frontend, saia da
+sessão antiga e entre com uma conta Cliente. Conclua a ativação, confira o painel
+e volte ao Cliente para verificar seus pedidos. Na publicação, atualize o backend
+antes do frontend: a renovação profissional usa `/api/v1/auth/refresh-provider`.
+Não há script SQL novo, dependência ou configuração adicional para essa mudança.
+
 ## Consulta de CEP no cadastro
 
 Na etapa 2, o campo opcional CEP consulta `https://viacep.com.br/ws/{cep}/json/`
@@ -66,7 +94,7 @@ e atendimento, e revisão dos dados. Não exige RG/CNH, portfólio ou aprovaçã
    `VITE_API_URL` continua como fallback somente quando a variável canônica não existe.
 2. Inicie uma versão do backend que contenha `GET /api/v1/especialidades` e
    `POST /api/v1/auth/register-provider`, `POST /api/v1/auth/login-provider`,
-   `POST /api/v1/auth/refresh` e `GET/PATCH /api/v1/fornecedores/me`.
+   `POST /api/v1/auth/refresh-provider` e `GET/PATCH /api/v1/fornecedores/me`.
 3. No ambiente do backend, configure `Cors:AllowedOrigins` com a origem efetiva
    do frontend. Ela costuma ser `http://localhost:5173`, mas deve corresponder à
    porta e ao protocolo exibidos pelo Vite.
@@ -90,7 +118,7 @@ esse estado. A senha e o formulário não são gravados em `localStorage` ou log
 
 Após o sucesso, a tela oferece retorno à entrada. O cadastro não cria sessão
 automática. O login usa a rota profissional e confirma o perfil antes de entrar.
-O acesso às telas profissionais exige Prestador ativo e perfil confirmado pela API.
+O acesso às telas profissionais exige conta ativa e perfil profissional confirmado pela API, incluindo contas Cliente após a ativação.
 Tokens expirados são renovados por uma única solicitação compartilhada; um 401
 permite apenas uma renovação e uma repetição, sem loops. Recusas de autenticação
 ou autorização retiram a sessão da área profissional.

@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { BrandLockup, BrandWordmark } from '../components/BrandLogo'
 import { getServiceCategories } from '../services/serviceCategories'
 import { registerProvider } from '../services/providerRegistration'
+import { activateProviderProfile } from '../services/fornecedores'
+import { authSession } from '../services/session'
+import { useProviderSession } from '../hooks/useProviderSession'
+import { navigateTo } from '../services/navigation'
 import { formatCep, lookupCep } from '../services/viaCep'
 import {
   BASIC_FIELDS,
@@ -13,7 +17,7 @@ import {
 } from '../services/registrationValidation'
 import './RegisterPage.css'
 
-const steps = [
+const registrationSteps = [
   { title: 'Dados básicos e acesso', description: 'Sua identificação e sua conta' },
   { title: 'Perfil profissional', description: 'O que você faz e onde atende' },
   { title: 'Revisão do cadastro', description: 'Confira os dados antes de concluir' },
@@ -66,9 +70,13 @@ function ReviewRow({ label, value }) {
   return <div className="register-review-row"><dt>{label}</dt><dd>{value || 'Não informado'}</dd></div>
 }
 
-function RegisterPage() {
+function RegisterPage({ activation = false }) {
+  const session = useProviderSession()
+  const steps = activation
+    ? [{ title: 'Dados da conta', description: 'Confirme sua identificação e seu telefone' }, ...registrationSteps.slice(1)]
+    : registrationSteps
   const [step, setStep] = useState(0)
-  const [formData, setFormData] = useState(initialForm)
+  const [formData, setFormData] = useState(() => ({ ...initialForm, ...(activation ? { name: session?.user.name ?? '', email: session?.user.email ?? '', cpf: formatDocument(session?.user.cpf ?? '', 'PF') } : {}) }))
   const [errors, setErrors] = useState({})
   const [categories, setCategories] = useState([])
   const [catalogLoading, setCatalogLoading] = useState(true)
@@ -159,7 +167,7 @@ function RegisterPage() {
     const nextValue = name === 'telefone' ? formatPhone(value)
       : name === 'cpf' || name === 'cnpj' ? formatDocument(value, formData.tipoPessoa) : value
     setFormData((current) => name === 'tipoPessoa'
-      ? { ...current, tipoPessoa: value, cpf: '', cnpj: '' }
+      ? { ...current, tipoPessoa: value, cpf: activation && value === 'PF' ? formatDocument(session?.user.cpf ?? '', 'PF') : '', cnpj: '' }
       : { ...current, [name]: nextValue })
     setErrors((current) => {
       const next = { ...current }
@@ -197,6 +205,7 @@ function RegisterPage() {
     if (submittingRef.current || (step === 1 && cepLookupRef.current)) return
     const nextErrors = validateRegistration(formData, {
       step: step < 2 ? step : undefined,
+      activation,
       availableSpecialties: categories.map((category) => category.id),
     })
     if (step > 0 && (catalogLoading || catalogError || categories.length === 0)) {
@@ -219,6 +228,11 @@ function RegisterPage() {
     setSubmitting(true)
     setSubmissionError('')
     try {
+      if (activation) {
+        await activateProviderProfile(formData)
+        if (mountedRef.current) navigateTo('/home', { replace: true })
+        return
+      }
       await registerProvider(createRegistrationPayload(formData))
       if (!mountedRef.current) return
       setFormData((current) => ({ ...current, password: '', passwordConfirmation: '' }))
@@ -270,11 +284,12 @@ function RegisterPage() {
 
       <section className="register-content">
         <div className="register-shell">
-          <header className="register-header"><a href="/login"><ArrowIcon direction="left" /> Voltar para entrar</a><span>Cadastro de prestador</span></header>
+          <header className="register-header"><a href="/login"><ArrowIcon direction="left" /> Voltar para entrar</a><span>{activation ? 'Ativar perfil de fornecedor' : 'Cadastro de prestador'}</span></header>
           <div className="mobile-register-brand"><BrandLockup /></div>
           <div className="mobile-progress" aria-label={`Etapa ${step + 1} de ${steps.length}`}>{steps.map((item, index) => <span className={index <= step ? 'active' : ''} key={item.title} />)}</div>
           <div className="register-form-heading"><div className="current-step-number">{step + 1}</div><div><p>Etapa {step + 1} de {steps.length}</p><h2 id="register-step-title" tabIndex="-1">{steps[step].title}</h2><span>{steps[step].description}</span></div></div>
 
+          {activation && <p className="register-message" role="status">Você está usando sua conta existente. Complete seus dados profissionais para começar a oferecer serviços. Seu acesso como cliente será mantido.</p>}
           <form className="register-form" onSubmit={handleSubmit} noValidate aria-busy={submitting}>
             {Object.values(errors).some(Boolean) && <div className="register-message register-message-error" role="alert">Confira os campos indicados para continuar.</div>}
             {submissionError && <div className="register-message register-message-error" role="alert">{submissionError}</div>}
@@ -282,14 +297,14 @@ function RegisterPage() {
               <legend className="register-visually-hidden">{steps[step].title}</legend>
               {step === 0 && <div className="register-fields-grid">
                 <RegistrationField label="Tipo de cadastro" {...fieldProps('tipoPessoa')} wide required><option value="PF">Pessoa física (PF)</option><option value="PJ">Pessoa jurídica (PJ)</option></RegistrationField>
-                <RegistrationField label={formData.tipoPessoa === 'PJ' ? 'Nome da conta ou empresa' : 'Nome completo'} {...fieldProps('name')} autoComplete="name" maxLength={200} required wide />
+                <RegistrationField label={formData.tipoPessoa === 'PJ' ? 'Nome da conta ou empresa' : 'Nome completo'} {...fieldProps('name')} autoComplete="name" maxLength={200} readOnly={activation && session?.user.role === 'Cliente'} required wide />
                 <RegistrationField label="Telefone com DDD" {...fieldProps('telefone')} type="tel" autoComplete="tel-national" placeholder="DDD e número" maxLength={20} required />
-                <RegistrationField label="E-mail" {...fieldProps('email')} type="email" autoComplete="email" maxLength={320} hint="Use um e-mail distinto da sua conta Cliente." required />
+                <RegistrationField label="E-mail" {...fieldProps('email')} type="email" autoComplete="email" maxLength={320} hint={activation ? 'E-mail da sua conta existente.' : 'Já tem conta no Cliente? Volte ao login e use o mesmo e-mail e senha.'} readOnly={activation} required />
                 {formData.tipoPessoa === 'PF'
-                  ? <RegistrationField label="CPF" {...fieldProps('cpf')} inputMode="numeric" autoComplete="off" maxLength={14} required wide />
+                  ? <RegistrationField label="CPF" {...fieldProps('cpf')} inputMode="numeric" autoComplete="off" maxLength={14} readOnly={activation && Boolean(session?.user.cpf)} required wide />
                   : <RegistrationField label="CNPJ" {...fieldProps('cnpj')} autoCapitalize="characters" autoComplete="off" maxLength={18} hint="Aceita CNPJ numérico ou alfanumérico." required wide />}
-                <RegistrationField label="Senha" {...fieldProps('password')} type="password" autoComplete="new-password" minLength={8} maxLength={128} hint="De 8 a 128 caracteres." required />
-                <RegistrationField label="Confirme a senha" {...fieldProps('passwordConfirmation')} type="password" autoComplete="new-password" maxLength={128} required />
+                {!activation && <><RegistrationField label="Senha" {...fieldProps('password')} type="password" autoComplete="new-password" minLength={8} maxLength={128} hint="De 8 a 128 caracteres." required />
+                <RegistrationField label="Confirme a senha" {...fieldProps('passwordConfirmation')} type="password" autoComplete="new-password" maxLength={128} required /></>}
               </div>}
 
               {step === 1 && <div className="register-categories-step">
@@ -321,11 +336,11 @@ function RegisterPage() {
               </div>}
             </fieldset>
             <div className="register-actions">
-              <button className="register-secondary-button" type="button" disabled={submitting} onClick={() => step === 0 ? window.location.assign('/login') : goToStep(step - 1)}><ArrowIcon direction="left" /> Voltar</button>
-              <button className="register-primary-button" type="submit" disabled={submitting || (step === 1 && cepStatus.loading) || (step > 0 && catalogUnavailable)}>{submitting ? 'Enviando…' : step === 2 ? 'Concluir cadastro' : 'Continuar'}{step === 2 ? <CheckIcon /> : <ArrowIcon />}</button>
+              <button className="register-secondary-button" type="button" disabled={submitting} onClick={() => step === 0 ? (activation ? (authSession.logout(), window.location.assign('/login')) : window.location.assign('/login')) : goToStep(step - 1)}><ArrowIcon direction="left" /> Voltar</button>
+              <button className="register-primary-button" type="submit" disabled={submitting || (step === 1 && cepStatus.loading) || (step > 0 && catalogUnavailable)}>{submitting ? 'Enviando…' : step === 2 ? (activation ? 'Ativar perfil de fornecedor' : 'Concluir cadastro') : 'Continuar'}{step === 2 ? <CheckIcon /> : <ArrowIcon />}</button>
             </div>
           </form>
-          <footer className="register-footer">Ao criar sua conta, você concorda com os <a href="/termos-de-uso">Termos de Uso</a> e a <a href="/politica-de-privacidade">Política de Privacidade</a>.</footer>
+          <footer className="register-footer">{activation ? 'Ao ativar seu perfil profissional, você concorda' : 'Ao criar sua conta, você concorda'} com os <a href="/termos-de-uso">Termos de Uso</a> e a <a href="/politica-de-privacidade">Política de Privacidade</a>.</footer>
         </div>
       </section>
     </main>

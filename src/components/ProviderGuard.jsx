@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useProviderSession } from '../hooks/useProviderSession'
 import { getProviderProfile } from '../services/fornecedores'
+import { navigateTo } from '../services/navigation'
 
 export default function ProviderGuard({ children }) {
   const session = useProviderSession()
@@ -10,6 +11,8 @@ export default function ProviderGuard({ children }) {
   const sessionId = session?.sessionId
   const expiresAt = session?.expiresAtUtc
   const accessToken = session?.accessToken
+  const pending = session?.providerProfileStatus === 'pending'
+  const activating = window.location.pathname === '/ativar-fornecedor'
 
   function retry() {
     setState({ verifiedSession: null, error: '' })
@@ -18,12 +21,17 @@ export default function ProviderGuard({ children }) {
 
   useEffect(() => {
     if (!userId) { window.location.replace('/login'); return }
+    if (pending) {
+      if (!activating) navigateTo('/ativar-fornecedor', { replace: true })
+      return
+    }
+    if (activating) { navigateTo('/home', { replace: true }); return }
     const controller = new AbortController()
     getProviderProfile({ signal: controller.signal })
       .then(() => { if (!controller.signal.aborted) setState({ verifiedSession: sessionId, error: '' }) })
       .catch((error) => { if (!controller.signal.aborted) setState({ verifiedSession: sessionId, error: error.message }) })
     return () => controller.abort()
-  }, [userId, sessionId, accessToken, reload])
+  }, [userId, sessionId, accessToken, reload, pending, activating])
 
   useEffect(() => {
     if (!expiresAt) return
@@ -34,6 +42,8 @@ export default function ProviderGuard({ children }) {
   }, [expiresAt])
 
   if (!session) return <main className="auth-gate" role="status">Redirecionando para o acesso profissional…</main>
+  if (pending) return activating ? children : <main className="auth-gate" role="status">Abrindo seu cadastro profissional…</main>
+  if (activating) return <main className="auth-gate" role="status">Abrindo seu painel…</main>
   if (state.verifiedSession !== sessionId) return <main className="auth-gate" role="status">Carregando sua conta profissional…</main>
   if (state.error) return <main className="auth-gate"><p role="alert">{state.error}</p><button type="button" onClick={retry}>Tentar novamente</button><a href="/login">Voltar ao acesso</a></main>
   if (!session.profile) return <main className="auth-gate" role="status">Carregando sua conta profissional…</main>

@@ -49,7 +49,7 @@ test('a disappeared opportunity does not log out a valid professional session, i
     const store = { getItem: key => memory.get(key), setItem: (key, value) => memory.set(key, value), removeItem: key => memory.delete(key) }
     const session = { accessToken: 'session-token', refreshToken: 'refresh-token', tokenType: 'bearer', expiresAtUtc: '2099-01-01T00:00:00Z', user: { id: providerId, name: 'Teste', email: 'test@example.invalid', role: 'Prestador', isActive: true } }
     const auth = createAuthClient({ sessionStorage: store, fetchImpl: async (url, options) => {
-      if (url.endsWith('/login-provider') || url.endsWith('/auth/refresh')) return Response.json(session)
+      if (url.endsWith('/login-provider') || url.endsWith('/auth/refresh-provider')) return Response.json(session)
       assert.equal(options.headers.Authorization, 'Bearer session-token')
       reads++
       return Response.json({}, { status: needsRefresh && reads === 1 ? 401 : 404 })

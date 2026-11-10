@@ -1,4 +1,4 @@
-﻿import { ApiError, requestJson } from './api.js'
+import { ApiError, requestJson } from './api.js'
 
 const STORAGE_KEY = 'resolvai:provider-session:v1'
 const sessionError = () => new ApiError('Sessão expirada. Entre novamente com sua conta profissional.', { status: 401 })
@@ -7,7 +7,9 @@ function sanitizeSession(value, now) {
   if (!value || typeof value.accessToken !== 'string' || !value.accessToken.trim()
     || value.tokenType?.toLowerCase() !== 'bearer'
     || !Number.isFinite(Date.parse(value.expiresAtUtc))
-    || !value.user || value.user.role !== 'Prestador' || value.user.isActive !== true
+    || !value.user || !['Cliente', 'Prestador'].includes(value.user.role) || value.user.isActive !== true
+    || (value.user.role === 'Cliente' && !['pending', 'active'].includes(value.providerProfileStatus))
+    || (value.providerProfileStatus !== undefined && !['pending', 'active'].includes(value.providerProfileStatus))
     || typeof value.user.id !== 'string' || !value.user.id.trim()
     || typeof value.user.name !== 'string' || typeof value.user.email !== 'string') return null
   const refreshToken = typeof value.refreshToken === 'string' && value.refreshToken.trim() ? value.refreshToken : undefined
@@ -15,7 +17,9 @@ function sanitizeSession(value, now) {
   return {
     accessToken: value.accessToken, tokenType: 'Bearer', expiresAtUtc: value.expiresAtUtc,
     ...(refreshToken ? { refreshToken } : {}),
-    user: { id: value.user.id, name: value.user.name, email: value.user.email, role: 'Prestador', isActive: true },
+    ...(value.providerProfileStatus ? { providerProfileStatus: value.providerProfileStatus } : {}),
+    user: { id: value.user.id, name: value.user.name, email: value.user.email, role: value.user.role, isActive: true,
+      ...(typeof value.user.cpf === 'string' ? { cpf: value.user.cpf } : {}) },
   }
 }
 
@@ -92,6 +96,7 @@ export function createAuthClient({ apiUrl, fetchImpl, localStorage, sessionStora
       const raw = JSON.stringify({
         accessToken: value.accessToken, tokenType: value.tokenType,
         expiresAtUtc: value.expiresAtUtc, refreshToken: value.refreshToken, user: value.user, sessionId,
+        providerProfileStatus: value.providerProfileStatus,
       })
       target.setItem(STORAGE_KEY, raw)
       if (remember) rememberedRaw = raw
@@ -134,7 +139,7 @@ export function createAuthClient({ apiUrl, fetchImpl, localStorage, sessionStora
     const previous = current
     const operation = (async () => {
       try {
-        const result = await requestJson('/api/v1/auth/refresh', {
+        const result = await requestJson('/api/v1/auth/refresh-provider', {
           apiUrl, fetchImpl, method: 'POST', body: { refreshToken: previous.refreshToken },
         })
         assertVersion(version)
@@ -142,7 +147,7 @@ export function createAuthClient({ apiUrl, fetchImpl, localStorage, sessionStora
         if (!valid || Date.parse(valid.expiresAtUtc) <= now() || valid.user.id !== previous.user.id) throw sessionError()
         // Some providers omit a new refresh token when the old one remains valid.
         if (!valid.refreshToken) valid.refreshToken = previous.refreshToken
-        return persist({ ...valid, ...(previous.profile ? { profile: previous.profile } : {}) })
+        return persist({ ...valid, ...(previous.profile && valid.providerProfileStatus !== 'pending' ? { profile: previous.profile } : {}) })
       } catch (error) {
         synchronize()
         if (generation === version) logout()
@@ -160,7 +165,7 @@ export function createAuthClient({ apiUrl, fetchImpl, localStorage, sessionStora
     if (!current) throw sessionError()
     const version = generation
     const usedToken = current.accessToken
-    const invalidatesSession = (status) => status === 403 || (status === 404 && options.invalidateOnNotFound !== false)
+    const invalidatesSession = (status) => (status === 403 && options.invalidateOnForbidden !== false) || (status === 404 && options.invalidateOnNotFound !== false)
     const send = async () => {
       const result = await requestJson(path, { ...options, apiUrl, fetchImpl, accessToken: current.accessToken, registration: false })
       assertVersion(version)
@@ -189,7 +194,7 @@ export function createAuthClient({ apiUrl, fetchImpl, localStorage, sessionStora
     if (expectedSessionId !== current?.sessionId) throw sessionError()
     if (!current || profile.idUsuario !== current.user.id) { logout(); throw sessionError() }
     // Identity comes from the confirmed professional response, including after save.
-    return persist({ ...current, user: { ...current.user, name: profile.name, email: profile.email }, profile })
+    return persist({ ...current, providerProfileStatus: 'active', user: { ...current.user, name: profile.name, email: profile.email, ...(profile.cpf ? { cpf: profile.cpf } : {}) }, profile })
   }
   return {
     login, logout, request, setProfile,

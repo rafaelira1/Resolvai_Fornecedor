@@ -55,7 +55,7 @@ test('malformed storage, inactive and Cliente sessions cannot enter professional
 test('expired concurrent requests refresh once and persist rotated tokens before retry', async () => {
   let refreshes = 0
   const { auth, localStorage } = client(async (url, options) => {
-    if (url.endsWith('/auth/refresh')) {
+    if (url.endsWith('/auth/refresh-provider')) {
       refreshes++
       assert.deepEqual(JSON.parse(options.body), { refreshToken: 'refresh-one' })
       assert.equal(new Headers(options.headers).get('Authorization'), null)
@@ -74,7 +74,7 @@ test('401 refreshes once and retries once, repeated refusal clears only auth sto
   let attempts = 0
   let refreshes = 0
   const { auth, localStorage, sessionStorage } = client(async (url) => {
-    if (url.endsWith('/auth/refresh')) { refreshes++; return response(200, session({ accessToken: 'new-token' })) }
+    if (url.endsWith('/auth/refresh-provider')) { refreshes++; return response(200, session({ accessToken: 'new-token' })) }
     attempts++
     return response(401, {})
   }, session())
@@ -91,7 +91,7 @@ test('401 refreshes once and retries once, repeated refusal clears only auth sto
 test('concurrent stale 401 responses reuse the rotated session without a second refresh', async () => {
   let refreshes = 0
   const { auth } = client(async (url, options) => {
-    if (url.endsWith('/auth/refresh')) { refreshes++; return response(200, session({ accessToken: 'new-token' })) }
+    if (url.endsWith('/auth/refresh-provider')) { refreshes++; return response(200, session({ accessToken: 'new-token' })) }
     if (new Headers(options.headers).get('Authorization') === 'Bearer access-one') {
       await new Promise((resolve) => setTimeout(resolve, 5))
       return response(401, {})

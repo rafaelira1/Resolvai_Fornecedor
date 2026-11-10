@@ -1,6 +1,6 @@
 import { ApiError } from './api.js'
 import { hasValidProfile } from './providerRegistration.js'
-import { validateRegistration, PROFESSIONAL_FIELDS } from './registrationValidation.js'
+import { createRegistrationPayload, validateRegistration, PROFESSIONAL_FIELDS } from './registrationValidation.js'
 import { authSession } from './session.js'
 
 export function getProfileSpecialtyOptions(categories, selected) {
@@ -41,6 +41,30 @@ export function validateProviderProfile(values, availableSpecialties) {
 export async function getProviderProfile({ auth = authSession, signal } = {}) {
   const sessionId = auth.getSnapshot()?.sessionId
   return confirmProfile(await auth.request('/api/v1/fornecedores/me', { signal }), auth, sessionId)
+}
+
+export async function activateProviderProfile(values, { auth = authSession, signal } = {}) {
+  const sessionId = auth.getSnapshot()?.sessionId
+  const body = createRegistrationPayload(values, { activation: true })
+  let profile
+  try {
+    profile = await auth.request('/api/v1/fornecedores/me/complete-registration', {
+      method: 'POST', body, expectedStatus: 201, signal,
+    })
+  } catch (error) {
+    if (signal?.aborted || !(error.status == null || error.status === 409 || error.status >= 500)) throw error
+    // The transaction may have committed before the response was lost. Read only
+    // this identity's profile before inviting another submission.
+    try {
+      profile = await auth.request('/api/v1/fornecedores/me', {
+        signal, invalidateOnNotFound: false, invalidateOnForbidden: false,
+      })
+    } catch {
+      if (error.status === 409) error.message = 'Não foi possível ativar o perfil com estes documentos. Verifique se o CPF ou CNPJ já está vinculado a outro fornecedor.'
+      throw error
+    }
+  }
+  return confirmProfile(profile, auth, sessionId)
 }
 
 export async function updateProviderProfile(values, { auth = authSession, availableSpecialties } = {}) {
