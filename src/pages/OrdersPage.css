@@ -208,3 +208,8 @@
 @media (prefers-reduced-motion: reduce) {
   .orders-page * { transition: none; }
 }
+
+.orders-badge.accepted { color: #9b5700; background: #fff3dc; }
+.orders-badge.cancelled { color: #9f2222; background: #fee9e9; }
+.orders-card.cancelled { border-color: #f1cccc; }
+.orders-summary-top .orders-badge { flex-shrink: 0; }

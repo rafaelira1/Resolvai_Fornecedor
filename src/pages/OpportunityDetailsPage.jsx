@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
-import { useProviderSession } from '../hooks/useProviderSession'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useProviderData } from '../hooks/useProviderData'
+import { providerCacheKeys } from '../services/providerCacheData'
 import { formatOpportunityDate, getOpportunity, getOpportunityPhotoUrl, getUrgency } from '../services/opportunities'
 import './OpportunityDetailsPage.css'
 
@@ -48,14 +49,10 @@ function PhotoPreview({ photo, onClose }) {
 }
 
 function OpportunityDetailsPage() {
-  const session = useProviderSession()
   const id = new URLSearchParams(window.location.search).get('id')
-  const [reload, setReload] = useState(0)
-  const [state, setState] = useState(null)
+  const load = useCallback(options => getOpportunity(id, options), [id])
+  const { data: opportunity, loading, error, reload } = useProviderData(load, { cacheKey: providerCacheKeys.opportunity(id) })
   const [photoId, setPhotoId] = useState(null)
-  const requestKey = JSON.stringify([session?.sessionId, session?.profile?.especialidades, id, reload])
-  const current = state?.key === requestKey ? state : null
-  const opportunity = current?.data
   const urgency = getUrgency(opportunity?.urgency)
   const client = opportunity?.client
   const initials = client?.name.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase() || 'C'
@@ -63,22 +60,11 @@ function OpportunityDetailsPage() {
   const previewPhoto = opportunity?.photos.find(photo => photo.id === photoId)
 
   useEffect(() => {
-    const controller = new AbortController()
-    getOpportunity(id, { signal: controller.signal })
-      .then(data => { if (!controller.signal.aborted) setState({ key: requestKey, data }) })
-      .catch(error => {
-        if (!controller.signal.aborted) setState({ key: requestKey, error: error.status === 404
-          ? 'Este pedido não está mais disponível ou não corresponde às suas especialidades.' : error.message })
-      })
-    return () => controller.abort()
-  }, [id, requestKey])
-
-  useEffect(() => {
     document.title = `${opportunity?.title || 'Detalhe do pedido'} | ResolvAI Fornecedor`
   }, [opportunity?.title])
 
   return (
-    <main className="request-detail-page" aria-busy={!current}>
+    <main className="request-detail-page" aria-busy={loading}>
       <div className="request-detail-container">
         <header className="request-detail-heading">
           <div><h1>Detalhe do Pedido</h1><p>Leia o escopo completo antes de enviar sua proposta.</p></div>
@@ -87,8 +73,8 @@ function OpportunityDetailsPage() {
             {opportunity && <ProposalButton compact id={opportunity.id} />}
           </div>
         </header>
-        {!current && <section className="request-card request-feedback" role="status"><span className="request-loading-indicator" aria-hidden="true" />Carregando pedido…</section>}
-        {current?.error && <section className="request-card request-feedback" role="alert"><p>{current.error}</p><button className="request-back-button" type="button" onClick={() => setReload(value => value + 1)}>Tentar novamente</button></section>}
+        {loading && <section className="request-card request-feedback" role="status"><span className="request-loading-indicator" aria-hidden="true" />Carregando pedido…</section>}
+        {error && <section className="request-card request-feedback" role="alert"><p>{error.status === 404 ? 'Este pedido não está mais disponível ou não corresponde às suas especialidades.' : error.message}</p><button className="request-back-button" type="button" onClick={reload}>Tentar novamente</button></section>}
         {opportunity && <div className="request-detail-layout">
           <div className="request-main-column">
             <section className="request-card request-scope-card" aria-labelledby="order-title">

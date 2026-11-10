@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useProviderSession } from '../hooks/useProviderSession'
+import { useProviderData } from '../hooks/useProviderData'
+import { providerCacheKeys } from '../services/providerCacheData'
 import { getOpportunity } from '../services/opportunities'
 import { sendProposal } from '../services/proposals'
 import './SendProposalPage.css'
@@ -22,8 +24,8 @@ function FormIcon({ name }) {
 function SendProposalPage() {
   const session = useProviderSession()
   const id = new URLSearchParams(window.location.search).get('id')
-  const [state, setState] = useState(null)
-  const [reload, setReload] = useState(0)
+  const load = useCallback(options => getOpportunity(id, options), [id])
+  const { data: opportunity, loading, error: loadError, reload } = useProviderData(load, { cacheKey: providerCacheKeys.opportunity(id) })
   const [priceDigits, setPriceDigits] = useState('')
   const [deadline, setDeadline] = useState('3 dias')
   const [startDate, setStartDate] = useState('')
@@ -41,22 +43,11 @@ function SendProposalPage() {
   const sendingRef = useRef(false)
   const requestId = useRef(null)
   const photoUrls = useRef(new Set())
-  const requestKey = JSON.stringify([session?.sessionId, session?.profile?.especialidades, id, reload])
-  const current = state?.key === requestKey ? state : null
-  const opportunity = current?.data
   const profileName = session?.profile?.nomeExibicao || session?.user.name || 'Minha conta'
   const initials = profileName.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase()
   const amount = Number(priceDigits || 0)
   const today = new Date()
   const minimumDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-
-  useEffect(() => {
-    const controller = new AbortController()
-    getOpportunity(id, { signal: controller.signal })
-      .then(data => { if (!controller.signal.aborted) setState({ key: requestKey, data }) })
-      .catch(error => { if (!controller.signal.aborted) setState({ key: requestKey, error: error.status === 404 ? 'Este pedido não está disponível para receber sua proposta.' : error.message }) })
-    return () => controller.abort()
-  }, [id, requestKey])
 
   useEffect(() => {
     document.title = `Enviar Proposta${opportunity ? ` | ${opportunity.title}` : ''} | ResolvAI`
@@ -121,8 +112,8 @@ function SendProposalPage() {
         <div><h1>Enviar Proposta</h1><p>Preencha todos os campos. Garantia é obrigatória.</p></div>
         <a className="send-proposal-back" href={id ? `/oportunidades/detalhes?id=${encodeURIComponent(id)}` : '/oportunidades'}><FormIcon name="arrow" />Voltar ao Pedido</a>
       </header>
-      {!current && <section className="send-proposal-card send-proposal-feedback" role="status">Carregando os dados do pedido…</section>}
-      {current?.error && <section className="send-proposal-card send-proposal-feedback" role="alert"><p>{current.error}</p><button type="button" className="send-proposal-back" onClick={() => setReload(value => value + 1)}>Tentar novamente</button></section>}
+      {loading && <section className="send-proposal-card send-proposal-feedback" role="status">Carregando os dados do pedido…</section>}
+      {loadError && <section className="send-proposal-card send-proposal-feedback" role="alert"><p>{loadError.status === 404 ? 'Este pedido não está disponível para receber sua proposta.' : loadError.message}</p><button type="button" className="send-proposal-back" onClick={reload}>Tentar novamente</button></section>}
       {opportunity && <form className="send-proposal-layout" onSubmit={submitProposal} aria-busy={sending}>
         <div className="send-proposal-form-column">
           <div className="send-proposal-order" aria-label="Pedido selecionado"><FormIcon name="document" /><div><strong>{opportunity.title}</strong><span>{opportunity.category}{opportunity.location ? ` · ${opportunity.location}` : ''}</span></div></div>

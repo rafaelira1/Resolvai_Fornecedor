@@ -106,9 +106,8 @@ O perfil usa GET/PATCH reais e exibe sucesso somente após a resposta confirmada
 Nome da conta, nome profissional, telefone, cidade, UF, raio, bio, registro e
 especialidades são editáveis. E-mail, tipo e CPF/CNPJ são somente leitura. Campos
 opcionais podem ser limpos. Não há portfólio, métricas ou selo de verificação
-fictícios na tela de perfil. Os fluxos demonstrativos existentes de pedidos,
-propostas e métricas da Home permanecem sem nova integração. O painel de
-oportunidades usa os pedidos reais, conforme descrito abaixo.
+fictícios na tela de perfil. Pedidos, propostas, oportunidades e indicadores da
+Home usam a API, conforme descrito abaixo.
 
 ### Hospedagem e verificação
 
@@ -165,31 +164,119 @@ compartilham a mesma tentativa; em falha de resultado incerto, os campos ficam
 bloqueados e “Verificar envio” reutiliza o UUID para não duplicar a proposta.
 A simulação de taxa não altera o valor total salvo no banco.
 Um pedido indisponível retorna aviso, sem selecionar outro registro. Um 404
-nesse recurso preserva a sessão profissional. O envio de propostas não faz
-parte desta integração. As rotas existentes `/pedidos` continuam demonstrativas.
+nesse recurso preserva a sessão profissional.
 
 As duas rotas usam a mesma configuração `VITE_API_BASE_URL` do cadastro/perfil.
 Não há novas chaves, migrações ou configurações do Supabase no frontend.
 
-## Fluxo de pedidos
+## Fluxo de pedidos integrado à API
 
-- `/pedidos`: serviços aceitos, em andamento, aguardando confirmação e concluídos.
-- `/pedidos/detalhes?id=1`: progresso, fotos, resumo do contrato e conclusão da execução.
-- A Home e o menu lateral levam aos mesmos pedidos; em telas pequenas o fluxo usa navegação inferior.
+- `/pedidos`: pedidos cuja proposta do fornecedor autenticado foi escolhida.
+- `/pedidos/detalhes?id=<UUID>`: detalhe real do pedido e da proposta aceita.
+- `/home`: resumo, oportunidades recentes e até cinco pedidos ativos; o link “Ver todos” abre a lista completa.
 
-Os três pedidos iniciais são dados de demonstração em `src/data/orders.js`.
-Marcar um serviço como concluído exige confirmação e muda seu estado para
-`awaiting_confirmation`. Essa ação não libera pagamento nem conclui a etapa do cliente.
-O estado fica no `localStorage` (`resolvai:orders:v1`), assim como os rascunhos de chat.
-As fotos ficam no IndexedDB (`resolvai-order-photos`): até 8 imagens JPG/PNG/WebP,
-de até 5 MB cada, por pedido, com prévia e remoção. Os dados são locais à origem
-e ao navegador e não são enviados a um servidor.
+A lista usa `GET /api/v1/provider/proposals?status=chosen&page=...&pageSize=50`,
+percorrendo todas as páginas. Os detalhes são consultados em
+`GET /api/v1/provider/orders/{id}`, com no máximo quatro consultas simultâneas.
+A API restringe a leitura ao fornecedor autenticado; o frontend confirma que a
+proposta retornada foi escolhida antes de exibir o pedido como serviço.
+Propostas apenas enviadas/visualizadas e pedidos de outros prestadores não entram
+em “Meus Pedidos”. Um pedido sem proposta escolhida permanece em Oportunidades.
 
-O chat permite salvar rascunhos; o contrato apresenta um resumo demonstrativo.
-Envio de mensagens, contrato assinado, confirmação do cliente e pagamento dependem
-de integrações de backend ainda não presentes neste repositório.
+`Pending` com proposta escolhida aparece como “Proposta aceita”; `InProgress`,
+`Completed` e `Cancelled` aparecem como “Em andamento”, “Concluído” e “Cancelado”.
+O aceite não comprova pagamento nem início da execução. Valores, cliente, local,
+prazo e garantia vêm da API; datas de conclusão, notas e progresso percentual
+não são estimados quando o backend não os fornece.
+
+A Home consulta `GET /api/v1/provider/summary` e as oportunidades existentes em
+`GET /api/v1/fornecedores/me/oportunidades?pageSize=4&sort=recent`.
+Indicadores exibem pedidos ativos, serviços concluídos, propostas ativas e pedidos
+compatíveis; não há ganhos, avaliações ou percentuais fictícios.
+Cada seção distingue carregamento, erro com nova tentativa e resultado vazio.
+Consultas recentes são reutilizadas por 5 minutos entre as telas. Depois disso,
+a navegação ou o retorno à aba revalida em segundo plano, mantendo os dados já
+confirmados visíveis durante a consulta. A atualização manual sempre força nova
+leitura. Trocas de conta/perfil ou saída da tela cancelam leituras anteriores.
+
+Não há fallback para pedidos de exemplo nem status em `localStorage`.
+As telas integradas são de consulta: chat, contrato assinado, fotos de execução,
+pagamento e solicitação de conclusão dependem de integrações próprias e não são
+simulados nos pedidos reais. Nenhuma migração ou chave do Supabase é necessária
+no frontend; a API usa a configuração de origem existente.
+
+Para validar com a API publicada:
+1. Configure `VITE_API_BASE_URL` e entre como fornecedor.
+2. Confira que, sem propostas escolhidas, “Meus Pedidos” está vazio.
+3. Aceite uma proposta pelo fluxo do cliente e atualize as duas telas: o pedido
+   deve aparecer com seu UUID, valor e status reais.
+4. Confira os detalhes pelo link e os estados concluído/cancelado com dados do banco.
+5. Entre como outro fornecedor e confirme que os pedidos anteriores não aparecem.
+6. Interrompa a API: deve aparecer erro e opção de tentar novamente, sem exemplos.
 
 Validações: `npm run build`, `npm run lint` e `npm test`.
+
+## Navegação e tempo de carregamento
+
+Links internos usam o histórico do navegador, sem recarregar toda a aplicação.
+Isso preserva a verificação da conta enquanto se navega entre telas protegidas;
+recarregar a página continua verificando o perfil na API. Voltar/avançar, links
+com UUID na query, abertura em outra aba, downloads e links externos mantêm seus
+comportamentos. A recuperação de senha por fragmento continua funcionando.
+
+Home, Meus Pedidos, detalhes do serviço, feed e detalhes de oportunidades,
+formulário de proposta e catálogo do perfil compartilham respostas de consulta.
+O cache fica em memória e no `sessionStorage` da aba, na chave
+`resolvai:provider-data:v1`, com validade de 5 minutos por sessão e filtros profissionais.
+Resultados anteriores podem ser usados por até 30 minutos enquanto a API é
+consultada novamente em segundo plano. O primeiro acesso a dados ainda não vistos
+continua precisando da API; o cache não cria registros de exemplo.
+O foco da janela não reinicia consultas em andamento nem repete consultas recentes.
+Erros não são guardados como resultados bem-sucedidos. Logout, troca de conta ou
+mudança de cidade/especialidades limpa o cache; o envio confirmado de proposta
+também invalida os dados para que a próxima tela faça uma nova leitura.
+Recarregar o navegador preserva os resultados de consulta da mesma sessão, mas
+o perfil continua sendo confirmado pela API antes de abrir as telas protegidas.
+Senhas, tokens e respostas de autenticação não entram no cache de dados.
+Os formatos salvos são validados ao restaurar; dados expirados ou inválidos são
+ignorados. Se o navegador bloquear o armazenamento, o cache em memória continua
+funcionando. Ao fechar a aba, o armazenamento de sessão é descartado pelo navegador.
+
+Testes de navegação verificam que Home → Meus Pedidos → Home consulta perfil,
+pedidos, resumo e oportunidades uma única vez enquanto os dados estão recentes,
+além da troca de UUID, atualização manual, recarregamento do navegador,
+reutilização de detalhes/perfil e isolamento entre sessões.
+O primeiro acesso e consultas após a validade ainda dependem da latência da API
+e do banco; esta otimização reduz recarregamentos e consultas repetidas.
+
+### Filtros e detalhes sem consultas repetidas
+
+Quando uma resposta recente, sem busca/filtro e em ordem de publicação contém
+**todos** os pedidos disponíveis (`items.length === totalItems`, página 1), os
+filtros de categoria, busca literal, ordenação e paginação são calculados sobre
+esse conjunto já autorizado. A idade do resultado continua sendo a da consulta
+original. Uma página parcial nunca é tratada como a lista inteira: nesse caso,
+um filtro novo consulta a API normalmente. As regras de normalização e desempate
+seguem o servidor, incluindo a ordem original de registros com a mesma data.
+
+Os links de detalhes em Home/Oportunidades iniciam a leitura ao receber foco,
+mouse ou toque, com no máximo duas preparações simultâneas. Se o usuário clicar
+antes da resposta, a tela compartilha a mesma requisição em vez de reiniciá-la.
+Consultas simultâneas da mesma sessão/chave também são compartilhadas. Cancelar
+um consumidor não cancela os demais; sair da conta cancela todos.
+
+Atualizar força somente aquela tentativa. Voltar depois a um filtro já consultado
+reaproveita o cache, inclusive após atualização manual. Erros recuperáveis de
+revalidação preservam o conteúdo anterior com aviso; 401/403/404 ocultam os dados
+do recurso e removem o resultado indisponível do cache. Erros nunca são salvos
+como resultados vazios. A autenticação e a autorização de envio continuam na API.
+
+O backend também precisa conter a otimização de consultas de oportunidades:
+listagem e detalhe passam de cinco comandos SQL sequenciais para um SELECT cada
+(sem contar as verificações de autenticação/perfil). Em comparação somente de
+leitura no mesmo banco e conexão, quatro execuções aquecidas mediram médias de
+836 → 168 ms na listagem e 874 → 171 ms no detalhe. Esses números medem o
+repositório, não o tempo total de navegação, e variam com a rede e o volume de dados.
 
 ## Recuperação de senha
 

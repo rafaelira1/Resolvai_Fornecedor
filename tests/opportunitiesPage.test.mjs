@@ -40,7 +40,10 @@ async function renderPage(t, fetcher, screen = 'OpportunitiesPage') {
   const text = () => JSON.stringify(renderer.toJSON())
   const button = name => renderer.root.findAllByType('button').find(node => node.children.includes(name))
   const click = async name => { await act(async () => button(name).props.onClick()) }
-  return { renderer, text, button, click }
+  return { renderer, text, button, click, show: async screen => {
+    const { default: Next } = await server.ssrLoadModule(`/src/pages/${screen}.jsx`)
+    await act(async () => renderer.update(React.createElement(Next)))
+  } }
 }
 
 test('feed renders real records and their UUID links, with server search, specialty filters and pagination', async t => {
@@ -212,4 +215,42 @@ test('an uncertain submission locks its draft and reuses the same request identi
   await submit()
   assert.deepEqual(posts[0], posts[1])
   assert.match(screen.text(), /Proposta enviada com sucesso/)
+})
+
+test('complete feeds filter immediately, and Update A → B → A never forces a cached filter again', async t => {
+  let calls = 0
+  const hydraulic = { ...item, id: secondId, specialtyCode: 'hidraulica', category: 'Hidráulica', title: 'Reparo hidráulico salvo' }
+  const screen = await renderPage(t, async () => { calls++; return Response.json(page({ items: [item, hydraulic], totalItems: 2 })) })
+  assert.equal(calls, 1)
+  await screen.click('Atualizar')
+  assert.equal(calls, 2)
+  await screen.click('Hidráulica')
+  assert.match(screen.text(), /Reparo hidráulico salvo/)
+  assert.doesNotMatch(screen.text(), /Pedido real elétrico/)
+  assert.equal(calls, 2, 'a complete, authorized feed is filtered locally')
+  await screen.click('Todos')
+  assert.match(screen.text(), /Pedido real elétrico/)
+  assert.equal(calls, 2, 'returning to the manually refreshed filter reuses its result')
+  await screen.click('Todos')
+  assert.equal(calls, 2)
+})
+
+test('hover/focus prefetch and opening detail share one pending read, then reuse its saved result', async t => {
+  let detailCalls = 0, release
+  const screen = await renderPage(t, async url => {
+    if (url.includes('/oportunidades?')) return Response.json(page())
+    detailCalls++
+    return new Promise(resolve => { release = () => resolve(Response.json({ ...item, description: 'Detalhe preparado antes do clique', photos: [] })) })
+  })
+  const link = screen.renderer.root.findAllByType('a').find(node => node.children.includes('Ver Pedido'))
+  await act(async () => link.props.onFocus())
+  assert.equal(detailCalls, 1)
+  await screen.show('OpportunityDetailsPage')
+  assert.equal(detailCalls, 1, 'the mounted detail joins the prefetch request')
+  await act(async () => release())
+  assert.match(screen.text(), /Detalhe preparado antes do clique/)
+  await screen.show('OpportunitiesPage')
+  await screen.show('OpportunityDetailsPage')
+  assert.match(screen.text(), /Detalhe preparado antes do clique/)
+  assert.equal(detailCalls, 1)
 })
